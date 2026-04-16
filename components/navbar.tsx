@@ -17,29 +17,24 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-3">
+          <Link href="/search" className="text-gray-400 hover:text-white text-sm transition-colors hidden md:block">
+            🔍 Search
+          </Link>
+
           {user ? (
             <>
               <span className="text-gray-400 text-sm hidden md:block">{user.email}</span>
-              <button
-                onClick={signOut}
-                className="text-gray-400 hover:text-white text-sm transition-colors"
-              >
+              <button onClick={signOut} className="text-gray-400 hover:text-white text-sm transition-colors">
                 Sign Out
               </button>
             </>
           ) : (
-            <Link
-              href="/login"
-              className="text-gray-400 hover:text-white text-sm transition-colors"
-            >
+            <Link href="/login" className="text-gray-400 hover:text-white text-sm transition-colors">
               Sign In
             </Link>
           )}
 
-          <Link
-            href="/cart"
-            className="relative bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-red-500 text-white px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-2"
-          >
+          <Link href="/cart" className="relative bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-red-500 text-white px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-2">
             <span>🛒</span>
             <span className="text-sm font-medium">Cart</span>
             {totalItems > 0 && (
