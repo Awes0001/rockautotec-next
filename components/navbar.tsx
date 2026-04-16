@@ -20,7 +20,9 @@ export default function Navbar() {
           <Link href="/search" className="text-gray-400 hover:text-white text-sm transition-colors hidden md:block">
             🔍 Search
           </Link>
-
+          <Link href="/orders" className="text-gray-400 hover:text-white text-sm transition-colors hidden md:block">
+            📦 Orders
+          </Link>
           {user ? (
             <>
               <span className="text-gray-400 text-sm hidden md:block">{user.email}</span>
@@ -33,7 +35,6 @@ export default function Navbar() {
               Sign In
             </Link>
           )}
-
           <Link href="/cart" className="relative bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-red-500 text-white px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-2">
             <span>🛒</span>
             <span className="text-sm font-medium">Cart</span>
