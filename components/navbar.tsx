@@ -25,7 +25,9 @@ export default function Navbar() {
           </Link>
           {user ? (
             <>
-              <span className="text-gray-400 text-sm hidden md:block">{user.email}</span>
+              <Link href="/profile" className="text-gray-400 hover:text-white text-sm transition-colors hidden md:block">
+                👤 Profile
+              </Link>
               <button onClick={signOut} className="text-gray-400 hover:text-white text-sm transition-colors">
                 Sign Out
               </button>

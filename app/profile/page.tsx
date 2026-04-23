@@ -56,7 +56,7 @@ export default function ProfilePage() {
   return (
     <main className="min-h-screen bg-gray-950 px-4 py-10">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-2">👤 My Profile</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">Profile</h1>
         <p className="text-gray-400 mb-8">{user?.email}</p>
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
           <h2 className="text-white font-semibold text-lg mb-4">Personal Information</h2>
@@ -82,11 +82,9 @@ export default function ProfilePage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className={`w-full font-semibold py-3 rounded-xl transition-colors ${
-            saved ? "bg-green-600 text-white" : "bg-red-600 hover:bg-red-700 text-white"
-          }`}
+          className={`w-full font-semibold py-3 rounded-xl transition-colors ${saved ? "bg-green-600 text-white" : "bg-red-600 hover:bg-red-700 text-white"}`}
         >
-          {saved ? "✅ Saved!" : saving ? "Saving..." : "💾 Save Profile"}
+          {saved ? "Saved!" : saving ? "Saving..." : "Save Profile"}
         </button>
       </div>
     </main>
