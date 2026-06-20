@@ -1,186 +1,155 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAuth } from "@/components/auth-context";
-import { supabase } from "@/components/supabase";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
-interface Part {
-  id: number;
-  name: string;
-  price: number;
-  category_id: number;
-  in_stock: boolean;
-}
+const vehicleData: Record<string, Record<string, string[]>> = {
+  Toyota: {
+    Camry: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Corolla: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Highlander: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    RAV4: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Tacoma: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Tundra: ["2018", "2019", "2020", "2021", "2022", "2023"],
+  },
+  Honda: {
+    Civic: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Accord: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    CRV: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Pilot: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Odyssey: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Ridgeline: ["2018", "2019", "2020", "2021", "2022", "2023"],
+  },
+  Ford: {
+    Mustang: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    F150: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Explorer: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Escape: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Edge: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Bronco: ["2021", "2022", "2023"],
+  },
+  BMW: {
+    "3 Series": ["2018", "2019", "2020", "2021", "2022", "2023"],
+    "5 Series": ["2018", "2019", "2020", "2021", "2022", "2023"],
+    "7 Series": ["2018", "2019", "2020", "2021", "2022", "2023"],
+    X3: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    X5: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    M3: ["2018", "2019", "2020", "2021", "2022", "2023"],
+  },
+  Mercedes: {
+    "C Class": ["2018", "2019", "2020", "2021", "2022", "2023"],
+    "E Class": ["2018", "2019", "2020", "2021", "2022", "2023"],
+    "S Class": ["2018", "2019", "2020", "2021", "2022", "2023"],
+    GLE: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    GLC: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    AMG: ["2018", "2019", "2020", "2021", "2022", "2023"],
+  },
+  Nissan: {
+    Altima: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Maxima: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Rogue: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Pathfinder: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Frontier: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Titan: ["2018", "2019", "2020", "2021", "2022", "2023"],
+  },
+  Chevrolet: {
+    Silverado: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Malibu: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Equinox: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Traverse: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Tahoe: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Camaro: ["2018", "2019", "2020", "2021", "2022", "2023"],
+  },
+  Hyundai: {
+    Elantra: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Sonata: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Tucson: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    "Santa Fe": ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Palisade: ["2020", "2021", "2022", "2023"],
+    Kona: ["2018", "2019", "2020", "2021", "2022", "2023"],
+  },
+  Jeep: {
+    Wrangler: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Cherokee: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    "Grand Cherokee": ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Compass: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Renegade: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Gladiator: ["2020", "2021", "2022", "2023"],
+  },
+  Volkswagen: {
+    Jetta: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Passat: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Tiguan: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Atlas: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    Golf: ["2018", "2019", "2020", "2021", "2022", "2023"],
+    ID4: ["2021", "2022", "2023"],
+  },
+};
 
-interface Order {
-  id: number;
-  created_at: string;
-  total: number;
-  status: string;
-  name: string;
-  email: string;
-}
+export default function HomePage() {
+  const router = useRouter();
+  const [make, setMake] = useState("");
+  const [model, setModel] = useState("");
+  const [year, setYear] = useState("");
 
-export default function AdminPage() {
-  const { user, loading: authLoading } = useAuth();
-  const [tab, setTab] = useState<"parts" | "orders">("parts");
-  const [parts, setParts] = useState<Part[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [newPart, setNewPart] = useState({ name: "", price: "", category_id: "" });
-  const [adding, setAdding] = useState(false);
+  const makes = Object.keys(vehicleData);
+  const models = make ? Object.keys(vehicleData[make]) : [];
+  const years = make && model ? vehicleData[make][model] : [];
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) return;
-    loadData();
-  }, [user, authLoading]);
-
-  async function loadData() {
-    const { data: partsData } = await supabase.from("parts").select("*").order("id");
-    setParts(partsData ?? []);
-    const { data: ordersData } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
-    setOrders(ordersData ?? []);
+  function handleSearch() {
+    if (!make || !model || !year) return alert("Please select all fields!");
+    router.push(`/parts?year=${year}&make=${make}&model=${model}`);
   }
-
-  async function handleAddPart() {
-    if (!newPart.name || !newPart.price || !newPart.category_id) return alert("Fill all fields!");
-    setAdding(true);
-    await supabase.from("parts").insert({
-      name: newPart.name,
-      price: parseFloat(newPart.price),
-      category_id: parseInt(newPart.category_id),
-    });
-    setNewPart({ name: "", price: "", category_id: "" });
-    setAdding(false);
-    loadData();
-  }
-
-  async function handleDeletePart(id: number) {
-    if (!confirm("Delete this part?")) return;
-    await supabase.from("parts").delete().eq("id", id);
-    loadData();
-  }
-
-  async function handleToggleStock(id: number, current: boolean) {
-    await supabase.from("parts").update({ in_stock: !current }).eq("id", id);
-    loadData();
-  }
-
-  if (authLoading) return (
-    <main className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <p className="text-gray-400">Loading...</p>
-    </main>
-  );
-
-  if (!user) return (
-    <main className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <p className="text-white text-xl">Please sign in first!</p>
-    </main>
-  );
 
   return (
-    <main className="min-h-screen bg-gray-950 px-4 py-10">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-2">⚙️ Admin Panel</h1>
-        <p className="text-gray-400 mb-8">Manage parts and orders</p>
-
-        <div className="flex gap-4 mb-8">
-          <button
-            onClick={() => setTab("parts")}
-            className={`px-6 py-2 rounded-xl font-semibold transition-colors ${tab === "parts" ? "bg-red-600 text-white" : "bg-gray-800 text-gray-400"}`}
+    <main className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-4">
+      <div className="text-center mb-10">
+        <h1 className="text-4xl font-bold text-white mb-2">🔧 RockAutoTec</h1>
+        <p className="text-gray-400 text-lg">Find the right parts for your vehicle</p>
+      </div>
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 w-full max-w-md shadow-xl">
+        <h2 className="text-white text-xl font-semibold mb-6">Select Your Vehicle</h2>
+        <div className="mb-4">
+          <label className="block text-gray-400 text-sm mb-1">Make</label>
+          <select
+            value={make}
+            onChange={(e) => { setMake(e.target.value); setModel(""); setYear(""); }}
+            className="w-full bg-gray-800 text-white border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500"
           >
-            🔧 Parts ({parts.length})
-          </button>
-          <button
-            onClick={() => setTab("orders")}
-            className={`px-6 py-2 rounded-xl font-semibold transition-colors ${tab === "orders" ? "bg-red-600 text-white" : "bg-gray-800 text-gray-400"}`}
-          >
-            📦 Orders ({orders.length})
-          </button>
+            <option value="">Select Make</option>
+            {makes.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
         </div>
-
-        {tab === "parts" && (
-          <div>
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
-              <h2 className="text-white font-semibold mb-4">➕ Add New Part</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <input
-                  placeholder="Part Name"
-                  value={newPart.name}
-                  onChange={(e) => setNewPart({ ...newPart, name: e.target.value })}
-                  className="bg-gray-800 text-white border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-red-500 placeholder-gray-500"
-                />
-                <input
-                  placeholder="Price (e.g. 49.99)"
-                  value={newPart.price}
-                  onChange={(e) => setNewPart({ ...newPart, price: e.target.value })}
-                  className="bg-gray-800 text-white border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-red-500 placeholder-gray-500"
-                />
-                <input
-                  placeholder="Category ID (1-6)"
-                  value={newPart.category_id}
-                  onChange={(e) => setNewPart({ ...newPart, category_id: e.target.value })}
-                  className="bg-gray-800 text-white border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-red-500 placeholder-gray-500"
-                />
-              </div>
-              <button
-                onClick={handleAddPart}
-                disabled={adding}
-                className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
-              >
-                {adding ? "Adding..." : "➕ Add Part"}
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              {parts.map((part) => (
-                <div key={part.id} className="bg-gray-900 border border-gray-800 rounded-xl px-6 py-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-white font-medium">{part.name}</p>
-                    <p className="text-gray-400 text-sm">Category {part.category_id} · ${part.price}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => handleToggleStock(part.id, part.in_stock)}
-                      className={`text-xs px-3 py-1 rounded-full font-semibold ${part.in_stock ? "bg-green-900 text-green-400" : "bg-red-900 text-red-400"}`}
-                    >
-                      {part.in_stock ? "In Stock" : "Out of Stock"}
-                    </button>
-                    <button
-                      onClick={() => handleDeletePart(part.id)}
-                      className="text-red-400 hover:text-red-300 text-sm transition-colors"
-                    >
-                      🗑️ Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {tab === "orders" && (
-          <div className="flex flex-col gap-4">
-            {orders.length === 0 && <p className="text-gray-400">No orders yet!</p>}
-            {orders.map((order) => (
-              <div key={order.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-white font-semibold">Order #{order.id}</p>
-                    <p className="text-gray-400 text-sm">{order.name} · {order.email}</p>
-                    <p className="text-gray-400 text-sm">{new Date(order.created_at).toLocaleDateString()}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-white font-bold">${order.total?.toFixed(2)}</p>
-                    <span className="bg-green-900 text-green-400 text-xs px-3 py-1 rounded-full">
-                      {order.status}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="mb-4">
+          <label className="block text-gray-400 text-sm mb-1">Model</label>
+          <select
+            value={model}
+            onChange={(e) => { setModel(e.target.value); setYear(""); }}
+            disabled={!make}
+            className="w-full bg-gray-800 text-white border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 disabled:opacity-40"
+          >
+            <option value="">Select Model</option>
+            {models.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+        <div className="mb-6">
+          <label className="block text-gray-400 text-sm mb-1">Year</label>
+          <select
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            disabled={!model}
+            className="w-full bg-gray-800 text-white border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:border-red-500 disabled:opacity-40"
+          >
+            <option value="">Select Year</option>
+            {years.map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+        <button
+          onClick={handleSearch}
+          className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-colors duration-200"
+        >
+          🔍 Find Parts
+        </button>
       </div>
     </main>
   );
