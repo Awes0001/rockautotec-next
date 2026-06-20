@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   Search, Phone, ShoppingCart, Star, Truck, Shield,
@@ -8,6 +8,7 @@ import {
   Settings, Disc, Gauge, Thermometer, Zap, Fuel,
   Package, Car, Wind, Wrench, Clock, Award, Users,
   Lock, CreditCard, Mail, Facebook, Twitter, Instagram, Youtube,
+  CheckCircle,
 } from "lucide-react";
 import { useCart } from "@/components/cart-context";
 
@@ -154,6 +155,17 @@ export default function HomePage() {
   const models = make ? (MODELS_BY_MAKE[make] ?? []) : [];
 
   const { addToCart } = useCart();
+
+  const sealRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sealRef.current;
+    if (el && !el.querySelector("script")) {
+      const s = document.createElement("script");
+      s.type = "text/javascript";
+      s.src = "https://rapidscansecure.com/siteseal/siteseal.js?code=17,F50AAA385EEF0238AF8EC5D332A2360021087E2A";
+      el.appendChild(s);
+    }
+  }, []);
 
   const handleSearch = () => {
     if (year && make && model) {
@@ -705,6 +717,57 @@ export default function HomePage() {
                   </li>
                 ))}
               </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Compliance Certification Bar ─────────────────────────────── */}
+        <div className="border-t border-zinc-800 bg-zinc-950">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+
+              {/* Badge cards */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                {/* PCI DSS */}
+                <div className="flex items-center gap-2.5 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 shadow-sm">
+                  <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-white leading-none tracking-tight">PCI DSS 4.0.1 Compliant</p>
+                    <p className="text-[10px] text-zinc-500 mt-0.5 font-mono">Merchant #565500001190152</p>
+                  </div>
+                </div>
+
+                {/* Authorize.Net */}
+                <div className="flex items-center gap-2.5 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 shadow-sm">
+                  <Shield className="h-4 w-4 text-blue-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-white leading-none tracking-tight">Authorize.Net Secured</p>
+                    <p className="text-[10px] text-zinc-500 mt-0.5">PCI Validated Payment Processing</p>
+                  </div>
+                </div>
+
+                {/* SSL */}
+                <div className="flex items-center gap-2.5 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 shadow-sm">
+                  <Lock className="h-4 w-4 text-emerald-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-white leading-none tracking-tight">256-bit SSL Encrypted</p>
+                    <p className="text-[10px] text-zinc-500 mt-0.5">Secure Checkout</p>
+                  </div>
+                </div>
+
+                {/* Valid Until */}
+                <div className="flex items-center gap-2.5 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 shadow-sm">
+                  <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-white leading-none tracking-tight">Valid Until June 2027</p>
+                    <p className="text-[10px] text-zinc-500 mt-0.5">Annual Compliance Verified</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* RapidScan site seal — script is appended via useEffect */}
+              <div ref={sealRef} className="seal shrink-0 min-h-[40px] min-w-[40px]" />
+
             </div>
           </div>
         </div>
