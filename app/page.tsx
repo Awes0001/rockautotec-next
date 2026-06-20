@@ -700,15 +700,15 @@ export default function HomePage() {
               <h4 className="text-xs font-semibold text-white uppercase tracking-widest mb-4">Help & Info</h4>
               <ul className="space-y-2">
                 {[
-                  ["Help Center",          "/"],
-                  ["Shipping Policy",      "/"],
-                  ["Return Policy",        "/"],
-                  ["Fitment Guarantee",    "/"],
-                  ["Installation Guides",  "/"],
-                  ["FAQ",                  "/"],
-                  ["Contact Us",           "/"],
-                  ["Dealer Program",       "/"],
-                  ["Affiliate Program",    "/"],
+                  ["Help Center",          "/contact"],
+                  ["Shipping Policy",      "/shipping"],
+                  ["Return Policy",        "/returns"],
+                  ["Fitment Guarantee",    "/about"],
+                  ["Installation Guides",  "/contact"],
+                  ["FAQ",                  "/contact"],
+                  ["Contact Us",           "/contact"],
+                  ["Dealer Program",       "/contact"],
+                  ["Affiliate Program",    "/contact"],
                 ].map(([label, href]) => (
                   <li key={label}>
                     <Link href={href} className="text-sm text-zinc-400 hover:text-red-400 transition-colors">
@@ -779,8 +779,14 @@ export default function HomePage() {
               © 2026 RockAutoTec LLC. All rights reserved.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              {["Privacy Policy", "Terms of Service", "Cookie Policy", "Accessibility", "Sitemap"].map((l) => (
-                <Link key={l} href="/" className="text-xs text-zinc-500 hover:text-red-400 transition-colors">
+              {([
+                ["Privacy Policy",  "/privacy"],
+                ["Terms of Service","/terms"],
+                ["Cookie Policy",   "/privacy"],
+                ["Accessibility",   "/contact"],
+                ["Sitemap",         "/parts"],
+              ] as [string, string][]).map(([l, href]) => (
+                <Link key={l} href={href} className="text-xs text-zinc-500 hover:text-red-400 transition-colors">
                   {l}
                 </Link>
               ))}
