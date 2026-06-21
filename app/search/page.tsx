@@ -4,7 +4,7 @@ import { useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search, SlidersHorizontal, X, Star, ShoppingCart, ChevronDown, Tag } from "lucide-react";
-import { ALL_PARTS, SLUG_TO_CATEGORY, Part } from "@/components/parts-list";
+import { ALL_PARTS, SLUG_TO_CATEGORY, Part, getPartImage } from "@/components/parts-list";
 import { useCart } from "@/components/cart-context";
 
 const CATEGORIES = Object.values(SLUG_TO_CATEGORY);
@@ -299,6 +299,21 @@ function SearchContent() {
                     key={part.id}
                     className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-zinc-700 transition-all duration-150 flex flex-col"
                   >
+                    {/* Image */}
+                    <Link href={`/part/${part.id}`} className="relative h-36 bg-zinc-800 overflow-hidden block group">
+                      <img
+                        src={getPartImage(part)}
+                        alt={part.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      {savings(part) > 0 && (
+                        <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                          SAVE {savings(part)}%
+                        </span>
+                      )}
+                    </Link>
+
                     {/* Category label */}
                     <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-zinc-800 bg-zinc-950/60">
                       <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider truncate">
@@ -313,22 +328,17 @@ function SearchContent() {
 
                     {/* Card body */}
                     <div className="p-4 flex-1 flex flex-col">
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-800 border border-zinc-700 text-lg">
-                          🔧
-                        </div>
-                        <div className="min-w-0">
-                          <Link
-                            href={`/part/${part.id}`}
-                            className="text-sm font-semibold text-white hover:text-red-400 leading-snug line-clamp-2 transition-colors"
-                          >
-                            {part.name}
-                          </Link>
-                          <p className="text-xs text-zinc-500 mt-0.5">
-                            {part.brand} ·{" "}
-                            <span className="font-mono">{part.sku}</span>
-                          </p>
-                        </div>
+                      <div className="mb-3">
+                        <Link
+                          href={`/part/${part.id}`}
+                          className="text-sm font-semibold text-white hover:text-red-400 leading-snug line-clamp-2 transition-colors"
+                        >
+                          {part.name}
+                        </Link>
+                        <p className="text-xs text-zinc-500 mt-0.5">
+                          {part.brand} ·{" "}
+                          <span className="font-mono">{part.sku}</span>
+                        </p>
                       </div>
 
                       <div className="flex items-center gap-2 mb-3">

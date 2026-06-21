@@ -3,8 +3,8 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Star, ShoppingCart, Package } from "lucide-react";
-import { CATALOG, Part } from "@/components/parts-list";
+import { ArrowLeft, Star, ShoppingCart, Package, AlertTriangle, Check } from "lucide-react";
+import { CATALOG, Part, getPartImage, isLowStock, lowStockCount } from "@/components/parts-list";
 import { useCart } from "@/components/cart-context";
 
 function StarRating({ rating }: { rating: number }) {
@@ -81,26 +81,42 @@ function CategoryContent() {
                 key={part.id}
                 className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-zinc-700 transition-colors flex flex-col"
               >
+                {/* Image */}
+                <Link href={`/part/${part.id}`} className="relative h-36 bg-zinc-800 overflow-hidden block group">
+                  <img
+                    src={getPartImage(part)}
+                    alt={part.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                </Link>
+
                 {/* SKU row */}
                 <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-zinc-800 bg-zinc-950/60">
                   <span className="text-xs font-mono text-zinc-500">{part.sku}</span>
-                  <span className={`text-[10px] font-semibold ${part.inStock ? "text-emerald-500" : "text-red-500"}`}>
-                    {part.inStock ? "In Stock" : "Out of Stock"}
-                  </span>
+                  {!part.inStock ? (
+                    <span className="text-[10px] font-semibold text-red-500">Out of Stock</span>
+                  ) : isLowStock(part) ? (
+                    <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-400">
+                      <AlertTriangle className="h-3 w-3" /> Only {lowStockCount(part)} left
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-500">
+                      <Check className="h-3 w-3" /> In Stock
+                    </span>
+                  )}
                 </div>
 
                 {/* Body */}
                 <div className="p-4 flex-1 flex flex-col">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-800 border border-zinc-700 text-lg">
-                      🔧
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-white leading-snug line-clamp-2">
-                        {part.name}
-                      </p>
-                      <p className="text-xs text-zinc-500 mt-0.5">{part.brand}</p>
-                    </div>
+                  <div className="mb-3">
+                    <Link
+                      href={`/part/${part.id}`}
+                      className="text-sm font-semibold text-white hover:text-red-400 leading-snug line-clamp-2 transition-colors"
+                    >
+                      {part.name}
+                    </Link>
+                    <p className="text-xs text-zinc-500 mt-0.5">{part.brand}</p>
                   </div>
 
                   <div className="flex items-center gap-2 mb-4">

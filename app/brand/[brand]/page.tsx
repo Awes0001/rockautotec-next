@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Star, ShoppingCart, ArrowLeft, Package, SlidersHorizontal, ChevronDown, Check } from "lucide-react";
 import { getProductsByBrand, BRAND_DISPLAY_NAMES, Product } from "@/lib/catalog";
 import { useCart } from "@/components/cart-context";
+import { getPartImage } from "@/components/parts-list";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -288,11 +289,14 @@ export default function BrandPage() {
                   key={product.id}
                   className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-zinc-700 hover:shadow-lg hover:shadow-zinc-950/60 transition-all duration-150"
                 >
-                  {/* Image placeholder */}
-                  <div className="relative h-40 bg-gradient-to-br from-zinc-800 to-zinc-900 flex items-center justify-center border-b border-zinc-800">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-zinc-700/50 text-4xl select-none">
-                      🔧
-                    </div>
+                  {/* Image */}
+                  <div className="relative h-40 bg-zinc-800 overflow-hidden border-b border-zinc-800">
+                    <img
+                      src={getPartImage(product)}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
                     {/* Stock badge */}
                     <span
                       className={`absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${

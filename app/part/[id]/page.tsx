@@ -1,15 +1,28 @@
 "use client";
 
 import { Suspense } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ShoppingCart, Star, Shield, Truck, RotateCcw, Phone,
-  ChevronRight, ArrowLeft, Check, Package, Wrench,
+  ChevronRight, ArrowLeft, Check, Package, Wrench, CheckCircle, Hash,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "@/components/cart-context";
-import { ALL_PARTS, CATEGORY_SLUGS, CATEGORY_IMAGES, Part } from "@/components/parts-list";
+import { ALL_PARTS, CATEGORY_SLUGS, getPartImage, Part } from "@/components/parts-list";
+
+const RECENTLY_VIEWED_KEY = "rockautotec_recently_viewed";
+
+function trackRecentlyViewed(id: number) {
+  try {
+    const raw = localStorage.getItem(RECENTLY_VIEWED_KEY);
+    const ids: number[] = raw ? JSON.parse(raw) : [];
+    const next = [id, ...ids.filter((x) => x !== id)].slice(0, 8);
+    localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(next));
+  } catch {
+    // localStorage unavailable — skip silently
+  }
+}
 
 const FITMENT_VEHICLES = [
   { year: "2020–2024", make: "Toyota",    model: "Camry",    engine: "2.5L 4-Cyl", notes: "All trims" },
@@ -42,12 +55,22 @@ function StarRow({ rating }: { rating: number }) {
 function ProductPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
   const [qty, setQty] = useState(1);
 
   const partId = parseInt(id ?? "0", 10);
   const product = ALL_PARTS.find((p) => p.id === partId);
+
+  const vehicleYear  = searchParams.get("year")  ?? "";
+  const vehicleMake  = searchParams.get("make")  ?? "";
+  const vehicleModel = searchParams.get("model") ?? "";
+  const hasVehicleContext = Boolean(vehicleYear && vehicleMake && vehicleModel);
+
+  useEffect(() => {
+    if (partId) trackRecentlyViewed(partId);
+  }, [partId]);
 
   if (!product) {
     return (
@@ -70,7 +93,7 @@ function ProductPage() {
 
   const savings = Math.round(((product.was - product.price) / product.was) * 100);
   const categorySlug = CATEGORY_SLUGS[product.category] ?? "engine";
-  const categoryImage = CATEGORY_IMAGES[product.category] ?? "https://picsum.photos/seed/auto-parts/600/500";
+  const productImage = getPartImage(product, 800);
   const related = getRelated(product.id, product.category);
 
   function handleAddToCart() {
@@ -98,13 +121,23 @@ function ProductPage() {
           <span className="text-zinc-300 truncate max-w-[200px]">{product.name}</span>
         </nav>
 
+        {/* Vehicle fitment confirmation */}
+        {hasVehicleContext && (
+          <div className="mb-6 flex items-center gap-2.5 rounded-lg border border-emerald-800/50 bg-emerald-950/30 px-4 py-3 text-sm">
+            <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
+            <span className="text-emerald-300">
+              Fits your <strong className="text-white">{vehicleYear} {vehicleMake} {vehicleModel}</strong>
+            </span>
+          </div>
+        )}
+
         {/* Main Product Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-14">
           {/* Left — Image */}
           <div className="space-y-3">
             <div className="relative rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 aspect-[4/3]">
               <img
-                src={categoryImage}
+                src={productImage}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
@@ -146,7 +179,11 @@ function ProductPage() {
               <p className="text-xs font-semibold text-red-400 uppercase tracking-widest mb-1.5">{product.category}</p>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight mb-2">{product.name}</h1>
               <p className="text-sm text-zinc-400">Brand: <span className="text-zinc-200 font-medium">{product.brand}</span></p>
-              <p className="text-sm text-zinc-400 mt-0.5">SKU: <span className="text-zinc-300 font-mono">{product.sku}</span></p>
+              <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5">
+                <Hash className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                <span className="text-xs text-zinc-400">OEM Part Number:</span>
+                <span className="text-xs text-white font-mono font-bold">{product.sku}</span>
+              </div>
             </div>
 
             {/* Rating */}
@@ -442,7 +479,7 @@ function RelatedCard({ product }: { product: Part }) {
     >
       <div className="relative aspect-[4/3] bg-zinc-800 overflow-hidden">
         <img
-          src={CATEGORY_IMAGES[product.category] ?? "https://picsum.photos/seed/auto/400/300"}
+          src={getPartImage(product, 400)}
           alt={product.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />

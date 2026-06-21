@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Search, Phone, ShoppingCart, Star, Truck, Shield,
@@ -8,9 +8,14 @@ import {
   Settings, Disc, Gauge, Thermometer, Zap, Fuel,
   Package, Car, Wind, Wrench, Clock, Award, Users,
   Lock, CreditCard, Mail, Facebook, Twitter, Instagram, Youtube,
-  CheckCircle,
+  CheckCircle, ScanLine, Loader2, AlertTriangle, Eye, TrendingUp,
+  Tag,
 } from "lucide-react";
 import { useCart } from "@/components/cart-context";
+import {
+  ALL_PARTS, CATEGORY_SLUGS, getPartImage, isLowStock, lowStockCount,
+  type Part,
+} from "@/components/parts-list";
 
 // ── Vehicle data ─────────────────────────────────────────────────────────────
 
@@ -69,48 +74,55 @@ const CATEGORIES = [
   { name: "Body & Exterior",       icon: Car,         count: "55,200+", href: "/category/body"         },
 ];
 
-// ── Featured products ─────────────────────────────────────────────────────────
-
-const PRODUCTS = [
-  { id: 1,  name: "Bosch QuietCast Brake Pad Set",       price: 42.99,  was: 67.99,  rating: 4.8, reviews: 2847, badge: "Best Seller", sku: "BC0905",    category: "Brakes"      },
-  { id: 2,  name: "Denso Oxygen Sensor – Universal",     price: 28.49,  was: 45.00,  rating: 4.7, reviews: 1523, badge: "Sale",        sku: "DS2345813", category: "Electrical"  },
-  { id: 3,  name: "Monroe Shock Absorber – Rear Pair",   price: 89.99,  was: 120.00, rating: 4.9, reviews: 986,  badge: "Top Rated",   sku: "MN5975",    category: "Suspension"  },
-  { id: 4,  name: "NGK Iridium Spark Plug Set (4 Pack)", price: 34.99,  was: 52.00,  rating: 4.8, reviews: 3201, badge: "Best Value",  sku: "NGK4218",   category: "Engine"      },
-  { id: 5,  name: "Gates Timing Belt Kit w/ Water Pump", price: 124.99, was: 189.99, rating: 4.6, reviews: 748,  badge: "Sale",        sku: "TCKWP244A", category: "Engine"      },
-  { id: 6,  name: "AC Delco Professional Oil Filter",    price: 8.99,   was: 14.99,  rating: 4.7, reviews: 5412, badge: "Popular",     sku: "PF63",      category: "Filters"     },
-  { id: 7,  name: "Dorman OE-Style Radiator Assembly",   price: 187.99, was: 265.00, rating: 4.5, reviews: 412,  badge: "OEM Quality", sku: "DR9749",    category: "Cooling"     },
-  { id: 8,  name: "Moog Wheel Bearing & Hub Assembly",   price: 78.99,  was: 105.00, rating: 4.8, reviews: 1834, badge: "Best Seller", sku: "MG512223",  category: "Suspension"  },
-];
-
 // ── Brands ───────────────────────────────────────────────────────────────────
 
 const BRANDS = [
   "Bosch", "Denso", "NGK", "Monroe", "Moog", "Gates", "Dorman",
-  "AC Delco", "KYB", "Bilstein", "Raybestos", "Cardone", "Delphi", "Motorcraft",
+  "ACDelco", "KYB", "Bilstein", "Raybestos", "Cardone", "Delphi", "Motorcraft",
 ];
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
 
 const REVIEWS = [
   {
-    name: "Mike T.", location: "Houston, TX", rating: 5, date: "Dec 2025",
+    name: "Mike Torrence", location: "Houston, TX", rating: 5, date: "Dec 14, 2025",
     text: "Found my hard-to-find Jeep Grand Cherokee suspension parts here when three other sites were backordered. Shipped same day, arrived perfectly packaged.",
-    product: "Monroe Shocks – Front Pair",
+    product: "Monroe Shock Absorber – Rear Pair",
   },
   {
-    name: "Sarah K.", location: "Phoenix, AZ", rating: 5, date: "Jan 2026",
-    text: "Best prices I've found online for OEM-quality parts. The vehicle selector saved me time—picked my '22 Camry and only compatible parts showed up.",
-    product: "Denso O2 Sensor",
+    name: "Sarah Kowalski", location: "Phoenix, AZ", rating: 5, date: "Jan 8, 2026",
+    text: "Best prices I've found online for OEM-quality parts. The vehicle selector saved me time — picked my '22 Camry and only compatible parts showed up.",
+    product: "Denso Oxygen Sensor – Universal",
   },
   {
-    name: "James R.", location: "Chicago, IL", rating: 5, date: "Feb 2026",
-    text: "Ordered Bosch brake pads Thursday evening, had them Friday morning. The 90-day return policy gives me complete peace of mind on every order.",
-    product: "Bosch QuietCast Brake Pads",
+    name: "James Reddick", location: "Chicago, IL", rating: 5, date: "Feb 2, 2026",
+    text: "Ordered Bosch brake pads Thursday evening, had them Friday morning. The 30-day return policy gives me complete peace of mind on every order.",
+    product: "Bosch QuietCast Brake Pad Set",
   },
   {
-    name: "Carlos M.", location: "Los Angeles, CA", rating: 4, date: "Mar 2026",
+    name: "Carlos Medina", location: "Los Angeles, CA", rating: 4, date: "Mar 11, 2026",
     text: "Great selection and competitive prices. Customer support helped me nail the right part number for my BMW in minutes. Will definitely order again.",
-    product: "Gates Timing Belt Kit",
+    product: "Gates Timing Belt Kit w/ Water Pump",
+  },
+  {
+    name: "Denise Albright", location: "Tampa, FL", rating: 5, date: "Mar 22, 2026",
+    text: "Run a 3-bay shop and switched our parts account here last fall. Net-30 terms and the bulk pricing tiers have genuinely saved us money every month.",
+    product: "ACDelco Professional Oil Filter (case)",
+  },
+  {
+    name: "Pete Vandermeer", location: "Grand Rapids, MI", rating: 5, date: "Apr 5, 2026",
+    text: "Wasn't sure my Silverado's wheel bearing would be in stock but it shipped that afternoon. Install was a breeze with the included hardware.",
+    product: "Moog Wheel Bearing & Hub Assembly",
+  },
+  {
+    name: "Aaliyah Brooks", location: "Atlanta, GA", rating: 4, date: "Apr 19, 2026",
+    text: "Ordered a radiator for my Accord after a leak. Packaging was solid — no dents on arrival, unlike the last place I ordered from.",
+    product: "Dorman OE-Style Radiator Assembly",
+  },
+  {
+    name: "Tom Whitfield", location: "Denver, CO", rating: 5, date: "May 2, 2026",
+    text: "The fitment guarantee is real — got the wrong sensor variant on my first order and they shipped the correct one overnight with a prepaid return label.",
+    product: "Delphi Mass Air Flow Sensor",
   },
 ];
 
@@ -130,20 +142,116 @@ function Stars({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) 
   );
 }
 
-function BadgePill({ badge }: { badge: string }) {
-  const cls: Record<string, string> = {
-    "Best Seller": "bg-red-600 text-white",
-    Sale:          "bg-orange-500 text-white",
-    "Top Rated":   "bg-yellow-500 text-black",
-    "Best Value":  "bg-emerald-600 text-white",
-    "OEM Quality": "bg-blue-600 text-white",
-    Popular:       "bg-purple-600 text-white",
-  };
+function StockTag({ part }: { part: Part }) {
+  if (!part.inStock) {
+    return <span className="text-xs font-semibold text-red-500">Out of Stock</span>;
+  }
+  if (isLowStock(part)) {
+    return (
+      <span className="text-xs font-semibold text-amber-400 flex items-center gap-1">
+        <AlertTriangle className="h-3 w-3" /> Only {lowStockCount(part)} left
+      </span>
+    );
+  }
   return (
-    <span className={`absolute top-2 left-2 text-xs font-bold px-2 py-0.5 rounded ${cls[badge] ?? "bg-zinc-700 text-white"}`}>
-      {badge}
+    <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
+      <Check className="h-3 w-3" /> In Stock
     </span>
   );
+}
+
+function ProductCard({ part, onView }: { part: Part; onView?: (id: number) => void }) {
+  const { addToCart } = useCart();
+  const [added, setAdded] = useState(false);
+  const discount = Math.round((1 - part.price / part.was) * 100);
+
+  return (
+    <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-red-600/60 hover:shadow-xl hover:shadow-red-950/30 transition-all duration-200 group">
+      <Link href={`/part/${part.id}`} onClick={() => onView?.(part.id)} className="relative h-40 sm:h-44 overflow-hidden block bg-zinc-800">
+        <img
+          src={getPartImage(part)}
+          alt={part.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+        />
+        {discount > 0 && (
+          <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow">
+            SAVE {discount}%
+          </span>
+        )}
+      </Link>
+
+      <div className="flex flex-col flex-1 p-4">
+        <p className="text-[11px] text-zinc-500 mb-1 uppercase tracking-wide font-semibold">
+          {part.brand} · <span className="font-mono text-zinc-400">{part.sku}</span>
+        </p>
+        <Link
+          href={`/part/${part.id}`}
+          onClick={() => onView?.(part.id)}
+          className="text-sm font-semibold text-white leading-snug mb-2 hover:text-red-400 transition-colors line-clamp-2"
+        >
+          {part.name}
+        </Link>
+        <div className="flex items-center gap-2 mb-2">
+          <Stars rating={part.rating} />
+          <span className="text-xs text-zinc-400">
+            {part.rating.toFixed(1)} ({part.reviews.toLocaleString()})
+          </span>
+        </div>
+
+        <div className="mt-auto">
+          <div className="flex items-baseline gap-2 mb-1.5">
+            <span className="text-lg font-bold text-white">${part.price.toFixed(2)}</span>
+            {discount > 0 && (
+              <span className="text-sm text-zinc-500 line-through">${part.was.toFixed(2)}</span>
+            )}
+          </div>
+          <div className="mb-3"><StockTag part={part} /></div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                addToCart({ part: part.name, year: "", make: "", model: "", price: part.price });
+                setAdded(true);
+                setTimeout(() => setAdded(false), 1500);
+              }}
+              disabled={!part.inStock}
+              className={`flex-1 text-xs font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+                added
+                  ? "bg-emerald-600 text-white"
+                  : part.inStock
+                  ? "bg-red-600 hover:bg-red-500 active:bg-red-700 text-white"
+                  : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+              }`}
+            >
+              {added ? <Check className="h-3.5 w-3.5" /> : <ShoppingCart className="h-3.5 w-3.5" />}
+              {added ? "Added!" : "Add to Cart"}
+            </button>
+            <Link
+              href={`/part/${part.id}`}
+              onClick={() => onView?.(part.id)}
+              className="border border-zinc-700 hover:border-red-500 text-zinc-400 hover:text-red-400 px-3 rounded-lg transition-colors flex items-center justify-center text-xs font-semibold whitespace-nowrap"
+            >
+              Check Fitment
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const RECENTLY_VIEWED_KEY = "rockautotec_recently_viewed";
+
+function pushRecentlyViewed(id: number) {
+  try {
+    const raw = localStorage.getItem(RECENTLY_VIEWED_KEY);
+    const ids: number[] = raw ? JSON.parse(raw) : [];
+    const next = [id, ...ids.filter((x) => x !== id)].slice(0, 8);
+    localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(next));
+  } catch {
+    // localStorage unavailable — skip silently
+  }
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -154,7 +262,14 @@ export default function HomePage() {
   const [model, setModel] = useState("");
   const models = make ? (MODELS_BY_MAKE[make] ?? []) : [];
 
-  const { addToCart } = useCart();
+  const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [recentlyViewedIds, setRecentlyViewedIds] = useState<number[]>([]);
+
+  // VIN decoder state
+  const [vin, setVin] = useState("");
+  const [vinLoading, setVinLoading] = useState(false);
+  const [vinResult, setVinResult] = useState<{ year: string; make: string; model: string } | null>(null);
+  const [vinError, setVinError] = useState("");
 
   const sealRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -167,11 +282,81 @@ export default function HomePage() {
     }
   }, []);
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(RECENTLY_VIEWED_KEY);
+      if (raw) setRecentlyViewedIds(JSON.parse(raw));
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const handleSearch = () => {
     if (year && make && model) {
       window.location.href = `/parts?year=${encodeURIComponent(year)}&make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`;
     }
   };
+
+  async function handleVinDecode() {
+    const cleaned = vin.trim().toUpperCase();
+    setVinError("");
+    setVinResult(null);
+    if (cleaned.length !== 17) {
+      setVinError("VINs are exactly 17 characters. Please check and try again.");
+      return;
+    }
+    setVinLoading(true);
+    try {
+      const res = await fetch(
+        `https://vpic.nhtsa.dot.gov/api/vehicles/decodevinvalues/${cleaned}?format=json`
+      );
+      const data = await res.json();
+      const r = data?.Results?.[0];
+      if (r && r.Make && r.ModelYear) {
+        setVinResult({ year: r.ModelYear, make: r.Make, model: r.Model || "" });
+      } else {
+        setVinError("We couldn't decode that VIN. Double-check the characters or contact our fitment team.");
+      }
+    } catch {
+      setVinError("VIN lookup service is temporarily unavailable. Please try the Year/Make/Model selector instead.");
+    } finally {
+      setVinLoading(false);
+    }
+  }
+
+  // Best sellers: highest review counts
+  const bestSellers = useMemo(
+    () => [...ALL_PARTS].sort((a, b) => b.reviews - a.reviews).slice(0, 8),
+    []
+  );
+
+  // Today's deals: biggest discount percentage
+  const todaysDeals = useMemo(
+    () =>
+      [...ALL_PARTS]
+        .sort((a, b) => (1 - a.price / a.was) - (1 - b.price / b.was))
+        .reverse()
+        .slice(0, 8),
+    []
+  );
+
+  const recentlyViewedParts = useMemo(
+    () =>
+      recentlyViewedIds
+        .map((id) => ALL_PARTS.find((p) => p.id === id))
+        .filter((p): p is Part => Boolean(p)),
+    [recentlyViewedIds]
+  );
+
+  const inventoryParts = useMemo(
+    () =>
+      activeCategory === "All"
+        ? ALL_PARTS
+        : ALL_PARTS.filter((p) => p.category === activeCategory),
+    [activeCategory]
+  );
+
+  const categoryNames = useMemo(() => Array.from(new Set(ALL_PARTS.map((p) => p.category))), []);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -185,8 +370,13 @@ export default function HomePage() {
           </span>
           <span className="hidden sm:block text-red-400">|</span>
           <span className="flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5 shrink-0" />
+            Same-Day Shipping Before 3PM EST
+          </span>
+          <span className="hidden sm:block text-red-400">|</span>
+          <span className="flex items-center gap-1.5">
             <RotateCcw className="h-3.5 w-3.5 shrink-0" />
-            90-Day Hassle-Free Returns
+            30-Day Returns
           </span>
           <span className="hidden sm:block text-red-400">|</span>
           <span className="flex items-center gap-1.5">
@@ -202,7 +392,6 @@ export default function HomePage() {
           className="absolute inset-0 opacity-25 pointer-events-none"
           style={{ background: "radial-gradient(ellipse at 70% 50%, #dc2626 0%, transparent 65%)" }}
         />
-        {/* subtle grid overlay */}
         <div
           className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{ backgroundImage: "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)", backgroundSize: "48px 48px" }}
@@ -212,12 +401,12 @@ export default function HomePage() {
           <div className="text-center">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-600/10 px-4 py-1.5 text-sm text-red-400">
               <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse shrink-0" />
-              Over 1 Million Parts In Stock · Same-Day Shipping Available
+              Serving Mechanics &amp; Drivers Since 2015 · Over 1 Million Parts In Stock
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-white">
-              The Right Part,{" "}
-              <span className="text-red-500">Guaranteed.</span>
+              Save Up to 60%{" "}
+              <span className="text-red-500">vs. Dealer Prices.</span>
             </h1>
             <p className="mt-4 text-lg sm:text-xl text-zinc-400 max-w-2xl mx-auto">
               OEM-quality auto parts for every make and model. Competitive prices, expert fitment, fast delivery.
@@ -305,8 +494,8 @@ export default function HomePage() {
               {[
                 { num: "1M+",    label: "Parts In Stock" },
                 { num: "48K+",   label: "5-Star Reviews" },
-                { num: "99.2%",  label: "Fitment Accuracy" },
-                { num: "Same Day", label: "Shipping Cutoff 4pm" },
+                { num: "60%",    label: "Avg. Savings vs Dealer" },
+                { num: "3PM EST", label: "Same-Day Cutoff" },
               ].map(({ num, label }) => (
                 <div key={label} className="text-center">
                   <div className="text-xl font-bold text-white">{num}</div>
@@ -318,15 +507,76 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── VIN Decoder ───────────────────────────────────────────────────── */}
+      <section className="bg-zinc-950 border-b border-zinc-800 py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 sm:p-8">
+            <div className="flex items-start gap-3 mb-5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600/15 text-red-500">
+                <ScanLine className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Know Your VIN? Get an Exact Match</h2>
+                <p className="text-sm text-zinc-400 mt-0.5">
+                  Enter your 17-character Vehicle Identification Number for a precise year/make/model match — powered by the NHTSA vehicle database.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                value={vin}
+                onChange={(e) => setVin(e.target.value.toUpperCase().slice(0, 17))}
+                placeholder="e.g. 1HGCM82633A004352"
+                maxLength={17}
+                className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 px-4 py-3 text-sm font-mono tracking-wider focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+              />
+              <button
+                onClick={handleVinDecode}
+                disabled={vinLoading}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 hover:bg-red-500 active:bg-red-700 disabled:opacity-60 text-white font-semibold px-6 py-3 text-sm transition-colors whitespace-nowrap"
+              >
+                {vinLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanLine className="h-4 w-4" />}
+                {vinLoading ? "Decoding…" : "Decode VIN"}
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-zinc-500">{vin.length}/17 characters</p>
+
+            {vinError && (
+              <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-800/50 bg-red-950/30 px-4 py-3 text-sm text-red-300">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                {vinError}
+              </div>
+            )}
+
+            {vinResult && (
+              <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-emerald-800/50 bg-emerald-950/30 px-4 py-3.5">
+                <div className="flex items-center gap-2 text-sm text-emerald-300">
+                  <CheckCircle className="h-4 w-4 shrink-0" />
+                  Decoded: <strong className="text-white">{vinResult.year} {vinResult.make} {vinResult.model}</strong>
+                </div>
+                <Link
+                  href={`/search?year=${encodeURIComponent(vinResult.year)}&make=${encodeURIComponent(vinResult.make)}&model=${encodeURIComponent(vinResult.model)}`}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 transition-colors shrink-0"
+                >
+                  Shop Parts <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* ── Trust Badges ─────────────────────────────────────────────────── */}
       <section className="bg-zinc-900 border-b border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {[
-              { icon: Truck,       title: "Free Shipping",  sub: "All orders $75 and over"   },
-              { icon: RotateCcw,  title: "90-Day Returns", sub: "Hassle-free, no questions"  },
-              { icon: Shield,     title: "Secure Payment",  sub: "256-bit SSL encryption"    },
-              { icon: Headphones, title: "Expert Support",  sub: "Mon–Sat 7am–9pm CT"        },
+              { icon: Truck,       title: "Free Shipping",      sub: "All orders $75 and over"   },
+              { icon: Clock,       title: "Same-Day Shipping",  sub: "Order before 3PM EST"       },
+              { icon: RotateCcw,   title: "30-Day Returns",     sub: "Hassle-free, no questions"  },
+              { icon: Headphones,  title: "Expert Support",     sub: "Mon–Sat 7am–9pm CT"          },
             ].map(({ icon: Icon, title, sub }) => (
               <div key={title} className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-800/60 p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600/15 text-red-500">
@@ -382,82 +632,108 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Featured Products ─────────────────────────────────────────────── */}
+      {/* ── Recently Viewed ────────────────────────────────────────────────── */}
+      {recentlyViewedParts.length > 0 && (
+        <section className="bg-zinc-900 border-y border-zinc-800 py-14">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-2 mb-6">
+              <Eye className="h-5 w-5 text-red-500" />
+              <h2 className="text-xl sm:text-2xl font-bold text-white">Recently Viewed</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {recentlyViewedParts.map((p) => (
+                <ProductCard key={p.id} part={p} onView={pushRecentlyViewed} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Best Sellers ──────────────────────────────────────────────────── */}
       <section className="bg-zinc-900 border-y border-zinc-800 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-8">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white">Featured Parts</h2>
-              <p className="mt-1 text-sm text-zinc-400">Top-selling parts with thousands of verified reviews</p>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-6 w-6 text-red-500" />
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white">Best Sellers</h2>
+                <p className="mt-1 text-sm text-zinc-400">Our most-reviewed parts, ranked by customer volume</p>
+              </div>
             </div>
-            <Link
-              href="/parts"
-              className="hidden sm:flex items-center gap-1 text-sm font-medium text-red-400 hover:text-red-300 transition-colors"
-            >
-              View All <ArrowRight className="h-4 w-4" />
-            </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {PRODUCTS.map((p) => {
-              const discount = Math.round((1 - p.price / p.was) * 100);
-              return (
-                <div
-                  key={p.id}
-                  className="flex flex-col rounded-xl border border-zinc-700 bg-zinc-800 overflow-hidden hover:border-red-600 hover:shadow-xl hover:shadow-red-950/40 transition-all duration-200 group"
-                >
-                  {/* Image placeholder */}
-                  <div className="relative h-44 bg-gradient-to-br from-zinc-700 to-zinc-800 flex items-center justify-center">
-                    <Wrench className="h-16 w-16 text-zinc-600" />
-                    <BadgePill badge={p.badge} />
-                  </div>
+            {bestSellers.map((p) => (
+              <ProductCard key={p.id} part={p} onView={pushRecentlyViewed} />
+            ))}
+          </div>
+        </div>
+      </section>
 
-                  <div className="flex flex-col flex-1 p-4">
-                    <p className="text-xs text-zinc-500 mb-1">
-                      {p.category} · <span className="font-mono">{p.sku}</span>
-                    </p>
-                    <h3 className="text-sm font-semibold text-white leading-snug mb-2 group-hover:text-red-400 transition-colors">
-                      {p.name}
-                    </h3>
-                    <div className="flex items-center gap-2 mb-3">
-                      <Stars rating={p.rating} />
-                      <span className="text-xs text-zinc-400">
-                        {p.rating} ({p.reviews.toLocaleString()})
-                      </span>
-                    </div>
+      {/* ── Today's Deals ─────────────────────────────────────────────────── */}
+      <section className="bg-zinc-950 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-end justify-between mb-8">
+            <div className="flex items-center gap-2">
+              <Tag className="h-6 w-6 text-red-500" />
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-white">Today&apos;s Deals</h2>
+                <p className="mt-1 text-sm text-zinc-400">The deepest discounts in our catalog right now</p>
+              </div>
+            </div>
+          </div>
 
-                    <div className="mt-auto">
-                      <div className="flex items-baseline gap-2 mb-3">
-                        <span className="text-lg font-bold text-white">${p.price.toFixed(2)}</span>
-                        <span className="text-sm text-zinc-500 line-through">${p.was.toFixed(2)}</span>
-                        <span className="text-xs text-emerald-400 font-semibold">{discount}% off</span>
-                      </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {todaysDeals.map((p) => (
+              <ProductCard key={p.id} part={p} onView={pushRecentlyViewed} />
+            ))}
+          </div>
+        </div>
+      </section>
 
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() =>
-                            addToCart({ part: p.name, year: "", make: "", model: "", price: p.price })
-                          }
-                          className="flex-1 bg-red-600 hover:bg-red-500 active:bg-red-700 text-white text-xs font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-1.5"
-                        >
-                          <ShoppingCart className="h-3.5 w-3.5" /> Add to Cart
-                        </button>
-                        <Link
-                          href={`/part/${p.id}`}
-                          className="border border-zinc-600 hover:border-red-500 text-zinc-400 hover:text-red-400 px-3 rounded-lg transition-colors flex items-center justify-center"
-                        >
-                          <ArrowRight className="h-4 w-4" />
-                        </Link>
-                      </div>
+      {/* ── Full Inventory ────────────────────────────────────────────────── */}
+      <section className="bg-zinc-900 border-y border-zinc-800 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white">Shop Our In-Stock Inventory</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                {inventoryParts.length} parts shown · {ALL_PARTS.length} total parts across all categories
+              </p>
+            </div>
+          </div>
 
-                      <p className="mt-2 text-xs text-emerald-400 flex items-center gap-1">
-                        <Check className="h-3 w-3" /> In Stock – Ships Today
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          {/* Category filter pills */}
+          <div className="flex flex-wrap gap-2 mb-8">
+            <button
+              onClick={() => setActiveCategory("All")}
+              className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                activeCategory === "All"
+                  ? "bg-red-600 text-white"
+                  : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
+              }`}
+            >
+              All Parts
+            </button>
+            {categoryNames.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+                  activeCategory === cat
+                    ? "bg-red-600 text-white"
+                    : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-white"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {inventoryParts.map((p) => (
+              <ProductCard key={p.id} part={p} onView={pushRecentlyViewed} />
+            ))}
           </div>
         </div>
       </section>
@@ -468,7 +744,7 @@ export default function HomePage() {
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-white">Why Choose RockAutoTec?</h2>
             <p className="mt-2 text-zinc-400 max-w-xl mx-auto">
-              Supplying professional mechanics and serious DIY drivers since 2008
+              Supplying professional mechanics and serious DIY drivers since 2015
             </p>
           </div>
 
@@ -482,7 +758,7 @@ export default function HomePage() {
               {
                 icon: Truck,
                 title: "Fast & Free Shipping",
-                desc: "Free on orders $75+. Most in-stock orders ship the same business day with cutoff at 4pm CT.",
+                desc: "Free on orders $75+. Most in-stock orders ship the same business day with cutoff at 3pm EST.",
               },
               {
                 icon: Users,
@@ -567,7 +843,7 @@ export default function HomePage() {
               <Link
                 key={brand}
                 href={`/search?brand=${encodeURIComponent(brand)}`}
-                className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-zinc-300 hover:border-red-600 hover:text-white transition-all duration-150"
+                className="rounded-lg border border-zinc-800 bg-zinc-900 px-5 py-2.5 text-sm font-extrabold tracking-tight text-zinc-300 hover:border-red-600 hover:text-white transition-all duration-150"
               >
                 {brand}
               </Link>
@@ -617,7 +893,7 @@ export default function HomePage() {
                 <span className="text-xl font-extrabold text-white tracking-tight">RockAutoTec</span>
               </div>
               <p className="text-sm text-zinc-400 leading-relaxed max-w-xs">
-                Your trusted source for quality auto parts since 2008. Over 1 million parts for every make and model.
+                Your trusted source for quality auto parts since 2015. Over 1 million parts for every make and model.
               </p>
               <ul className="mt-5 space-y-2 text-sm text-zinc-400">
                 <li className="flex items-center gap-2">
@@ -683,7 +959,7 @@ export default function HomePage() {
                   ["Track My Order", "/orders"],
                   ["My Garage",      "/profile"],
                   ["Saved Parts",    "/profile"],
-                  ["Returns",        "/orders"],
+                  ["Returns",        "/returns"],
                   ["Wish List",      "/profile"],
                 ].map(([label, href]) => (
                   <li key={label}>
@@ -703,12 +979,11 @@ export default function HomePage() {
                   ["Help Center",          "/contact"],
                   ["Shipping Policy",      "/shipping"],
                   ["Return Policy",        "/returns"],
-                  ["Fitment Guarantee",    "/about"],
-                  ["Installation Guides",  "/contact"],
-                  ["FAQ",                  "/contact"],
+                  ["Fitment Guarantee",    "/fitment"],
+                  ["Fleet & Commercial",   "/fleet"],
+                  ["Warranty Policy",      "/warranty"],
                   ["Contact Us",           "/contact"],
-                  ["Dealer Program",       "/contact"],
-                  ["Affiliate Program",    "/contact"],
+                  ["About Us",             "/about"],
                 ].map(([label, href]) => (
                   <li key={label}>
                     <Link href={href} className="text-sm text-zinc-400 hover:text-red-400 transition-colors">

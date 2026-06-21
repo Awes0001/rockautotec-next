@@ -195,19 +195,50 @@ export const CATEGORY_ICONS: Record<string, string> = {
   "Body & Exterior":       "🚗",
 };
 
-// Picsum placeholder images with consistent seeds per category
+// Real auto-parts photography from Unsplash (verified live URLs), one primary per category
 export const CATEGORY_IMAGES: Record<string, string> = {
-  "Engine Parts":          "https://picsum.photos/seed/engine-parts/800/400",
-  "Brake System":          "https://picsum.photos/seed/brake-system/800/400",
-  "Suspension & Steering": "https://picsum.photos/seed/car-suspension/800/400",
-  "Cooling System":        "https://picsum.photos/seed/radiator-cool/800/400",
-  "Electrical & Lighting": "https://picsum.photos/seed/car-electrical/800/400",
-  "Fuel System":           "https://picsum.photos/seed/fuel-pump-car/800/400",
-  "Transmission":          "https://picsum.photos/seed/transmission-auto/800/400",
-  "Exhaust System":        "https://picsum.photos/seed/exhaust-pipe/800/400",
-  "Filters & Maintenance": "https://picsum.photos/seed/oil-filter-maintenance/800/400",
-  "Body & Exterior":       "https://picsum.photos/seed/car-body-exterior/800/400",
+  "Engine Parts":          "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=1200&q=80&auto=format&fit=crop",
+  "Brake System":          "https://images.unsplash.com/photo-1632833239869-a37e3a5806d2?w=1200&q=80&auto=format&fit=crop",
+  "Suspension & Steering": "https://images.unsplash.com/photo-1542362567-b07e54358753?w=1200&q=80&auto=format&fit=crop",
+  "Cooling System":        "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=1200&q=80&auto=format&fit=crop",
+  "Electrical & Lighting": "https://images.unsplash.com/photo-1620891549027-942fdc95d3f5?w=1200&q=80&auto=format&fit=crop",
+  "Fuel System":           "https://images.unsplash.com/photo-1486006920555-c77dcf18193c?w=1200&q=80&auto=format&fit=crop",
+  "Transmission":          "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1200&q=80&auto=format&fit=crop",
+  "Exhaust System":        "https://images.unsplash.com/photo-1502877338535-766e1452684a?w=1200&q=80&auto=format&fit=crop",
+  "Filters & Maintenance": "https://images.unsplash.com/photo-1567789884554-0b844b597180?w=1200&q=80&auto=format&fit=crop",
+  "Body & Exterior":       "https://images.unsplash.com/photo-1551522435-a13afa10f103?w=1200&q=80&auto=format&fit=crop",
 };
+
+// Two verified Unsplash photos per category for product-card visual variety
+const PART_IMAGE_VARIANTS: Record<string, [string, string]> = {
+  "Engine Parts":          ["1487754180451-c456f719a1fc", "1503376780353-7e6692767b70"],
+  "Brake System":          ["1632833239869-a37e3a5806d2", "1605559424843-9e4c228bf1c2"],
+  "Suspension & Steering": ["1542362567-b07e54358753",   "1517524008697-84bbe3c3fd98"],
+  "Cooling System":        ["1530046339160-ce3e530c7d2f", "1600661653561-629509216228"],
+  "Electrical & Lighting": ["1620891549027-942fdc95d3f5", "1607853554439-0069ec0f29b6"],
+  "Fuel System":           ["1486006920555-c77dcf18193c", "1503376780353-7e6692767b70"],
+  "Transmission":          ["1492144534655-ae79c964c9d7", "1518987048-93e29699e79a"],
+  "Exhaust System":        ["1502877338535-766e1452684a", "1449965408869-eaa3f722e40d"],
+  "Filters & Maintenance": ["1567789884554-0b844b597180", "1573497019940-1c28c88b4f3e"],
+  "Body & Exterior":       ["1551522435-a13afa10f103",   "1494976388531-d1058494cdd8"],
+};
+
+/** Returns a real Unsplash product photo for a part, alternating between two per category for variety. */
+export function getPartImage(part: Part, width = 600): string {
+  const variants = PART_IMAGE_VARIANTS[part.category] ?? PART_IMAGE_VARIANTS["Engine Parts"];
+  const photoId = variants[part.id % 2];
+  return `https://images.unsplash.com/photo-${photoId}?w=${width}&q=80&auto=format&fit=crop`;
+}
+
+/** Deterministic low-stock flag so the same parts always show "Only X left" rather than random flicker. */
+export function isLowStock(part: Part): boolean {
+  return part.id % 9 === 0;
+}
+
+/** Deterministic low-stock unit count (3–7) for parts flagged by isLowStock. */
+export function lowStockCount(part: Part): number {
+  return 3 + (part.id % 5);
+}
 
 // Legacy export kept for backward compatibility
 export const partsList = {

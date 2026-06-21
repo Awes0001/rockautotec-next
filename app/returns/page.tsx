@@ -29,7 +29,7 @@ const STEPS = [
 
 const ELIGIBLE = [
   "New, uninstalled parts in original manufacturer packaging",
-  "Parts returned within 90 days of the delivery date",
+  "Parts returned within 30 days of the delivery date",
   "Items that have not been modified, cut, or tampered with",
   "Parts with all original hardware, instructions, and accessories included",
   "Electrical parts that have not been powered on or installed",
@@ -37,7 +37,7 @@ const ELIGIBLE = [
 
 const NOT_ELIGIBLE = [
   "Installed or used parts (any sign of installation voids return eligibility)",
-  "Parts returned after 90 days of the delivery date",
+  "Parts returned after 30 days of the delivery date",
   "Special-order or custom-built parts marked 'Non-Returnable' at time of purchase",
   "Hazardous materials (fluids, batteries, aerosols) that have been opened",
   "Parts with missing packaging, hardware, or documentation",
@@ -90,14 +90,14 @@ export default function ReturnsPage() {
           <div className="max-w-2xl">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-600/10 px-4 py-1.5 text-sm text-red-400">
               <RotateCcw className="h-3.5 w-3.5" />
-              90-Day Return Window
+              30-Day Return Window
             </div>
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white">
               Return <span className="text-red-500">Policy</span>
             </h1>
             <p className="mt-4 text-zinc-400 leading-relaxed">
               We stand behind every part we sell. If you&apos;re not satisfied for any reason,
-              our 90-day hassle-free return policy has you covered.
+              our 30-day hassle-free return policy has you covered.
             </p>
             <p className="mt-3 text-xs text-zinc-500">Last updated: January 15, 2026</p>
           </div>
@@ -109,7 +109,7 @@ export default function ReturnsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
-              { icon: Clock,    stat: "90 Days",   sub: "Return window"              },
+              { icon: Clock,    stat: "30 Days",   sub: "Return window"              },
               { icon: Truck,    stat: "Free",       sub: "Return shipping (fitment)"  },
               { icon: Package,  stat: "2 Days",     sub: "Inspection turnaround"      },
               { icon: CreditCard, stat: "3–5 Days", sub: "Refund to card"            },
