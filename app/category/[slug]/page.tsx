@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import {
   CATALOG, SLUG_TO_CATEGORY, CATEGORY_IMAGES, CATEGORY_ICONS,
-  getPartImage, isLowStock, lowStockCount, Part,
+  getPartImage, isLowStock, lowStockCount, getPartType, Part,
 } from "@/components/parts-list";
 import { useCart } from "@/components/cart-context";
 
@@ -64,6 +64,7 @@ export default function CategorySlugPage() {
   const [showSort, setShowSort]           = useState(false);
   const [showFilters, setShowFilters]     = useState(false);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [priceRange, setPriceRange]       = useState<{ label: string; min: number; max: number } | null>(null);
   const [minRating, setMinRating]         = useState<number | null>(null);
 
@@ -75,12 +76,21 @@ export default function CategorySlugPage() {
     [rawParts]
   );
 
-  const activeFilterCount = selectedBrands.length + (priceRange ? 1 : 0) + (minRating ? 1 : 0);
+  const partTypes = useMemo(
+    () => Array.from(new Set(rawParts.map((p) => getPartType(p)))).sort(),
+    [rawParts]
+  );
+
+  const activeFilterCount =
+    selectedBrands.length + selectedTypes.length + (priceRange ? 1 : 0) + (minRating ? 1 : 0);
 
   const parts = useMemo(() => {
     let filtered = rawParts;
     if (selectedBrands.length > 0) {
       filtered = filtered.filter((p) => selectedBrands.includes(p.brand));
+    }
+    if (selectedTypes.length > 0) {
+      filtered = filtered.filter((p) => selectedTypes.includes(getPartType(p)));
     }
     if (priceRange) {
       filtered = filtered.filter((p) => p.price >= priceRange.min && p.price <= priceRange.max);
@@ -97,7 +107,7 @@ export default function CategorySlugPage() {
         default:           return 0;
       }
     });
-  }, [rawParts, selectedBrands, priceRange, minRating, sortBy]);
+  }, [rawParts, selectedBrands, selectedTypes, priceRange, minRating, sortBy]);
 
   const hasVehicle = Boolean(year && make && model);
   const backHref   = hasVehicle ? `/parts?year=${year}&make=${make}&model=${model}` : "/parts";
@@ -123,8 +133,15 @@ export default function CategorySlugPage() {
     );
   }
 
+  function toggleType(type: string) {
+    setSelectedTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  }
+
   function clearFilters() {
     setSelectedBrands([]);
+    setSelectedTypes([]);
     setPriceRange(null);
     setMinRating(null);
   }
@@ -252,6 +269,15 @@ export default function CategorySlugPage() {
                 {b} <X className="h-3 w-3" />
               </button>
             ))}
+            {selectedTypes.map((t) => (
+              <button
+                key={t}
+                onClick={() => toggleType(t)}
+                className="flex items-center gap-1.5 rounded-full bg-red-900/30 border border-red-800/50 text-red-300 text-xs px-3 py-1.5 hover:bg-red-900/50 transition-colors"
+              >
+                {t} <X className="h-3 w-3" />
+              </button>
+            ))}
             {priceRange && (
               <button
                 onClick={() => setPriceRange(null)}
@@ -306,6 +332,33 @@ export default function CategorySlugPage() {
                       className="sr-only"
                     />
                     <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">{brand}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Part Type */}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+              <h3 className="text-sm font-semibold text-white mb-3">Part Type</h3>
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {partTypes.map((type) => (
+                  <label key={type} className="flex items-center gap-2.5 cursor-pointer group">
+                    <span
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                        selectedTypes.includes(type)
+                          ? "bg-red-600 border-red-600"
+                          : "border-zinc-600 group-hover:border-zinc-400"
+                      }`}
+                    >
+                      {selectedTypes.includes(type) && <Check className="h-3 w-3 text-white" />}
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={selectedTypes.includes(type)}
+                      onChange={() => toggleType(type)}
+                      className="sr-only"
+                    />
+                    <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">{type}</span>
                   </label>
                 ))}
               </div>
