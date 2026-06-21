@@ -3,10 +3,13 @@
 import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Star, ShoppingCart, ArrowLeft, Package, SlidersHorizontal, ChevronDown, Check } from "lucide-react";
-import { getProductsByBrand, BRAND_DISPLAY_NAMES, Product } from "@/lib/catalog";
+import { Star, ShoppingCart, ArrowLeft, Package, SlidersHorizontal, ChevronDown, Check, AlertTriangle } from "lucide-react";
+import {
+  getProductsByBrand, BRAND_DISPLAY_NAMES, MANUFACTURER_NAMES, CATEGORY_ICON_NAMES,
+  isLowStock, lowStockCount, shippingEstimate, type Product, type Brand,
+} from "@/lib/catalog";
 import { useCart } from "@/components/cart-context";
-import { getPartImage } from "@/components/parts-list";
+import PartIcon from "@/components/part-icon";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -60,11 +63,13 @@ export default function BrandPage() {
 
   const allProducts = useMemo(() => getProductsByBrand(brandSlug), [brandSlug]);
 
-  // unique subcategories for filter pills
+  // unique part types for filter pills
   const subcategories = useMemo(
-    () => ["All", ...Array.from(new Set(allProducts.map((p) => p.subcategory)))],
+    () => ["All", ...Array.from(new Set(allProducts.map((p) => p.partType)))],
     [allProducts]
   );
+
+  const manufacturer = allProducts[0] ? MANUFACTURER_NAMES[allProducts[0].brand as Brand] : "";
 
   const [selectedSub, setSelectedSub] = useState<string>("All");
   const [sortBy,      setSortBy]      = useState<SortKey>("default");
@@ -74,7 +79,7 @@ export default function BrandPage() {
 
   const filtered = useMemo(() => {
     let list = [...allProducts];
-    if (selectedSub !== "All") list = list.filter((p) => p.subcategory === selectedSub);
+    if (selectedSub !== "All") list = list.filter((p) => p.partType === selectedSub);
     if (inStockOnly)           list = list.filter((p) => p.inStock);
     switch (sortBy) {
       case "price-asc":  list.sort((a, b) => a.price - b.price); break;
@@ -157,6 +162,9 @@ export default function BrandPage() {
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
                 {brandName}
               </h1>
+              {manufacturer && (
+                <p className="mt-1 text-xs text-zinc-500">{manufacturer}</p>
+              )}
               <p className="mt-1.5 text-zinc-400 text-sm">
                 {allProducts.length} products ·{" "}
                 <span className="text-emerald-400 font-semibold">
@@ -290,23 +298,27 @@ export default function BrandPage() {
                   className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-zinc-700 hover:shadow-lg hover:shadow-zinc-950/60 transition-all duration-150"
                 >
                   {/* Image */}
-                  <div className="relative h-40 bg-zinc-800 overflow-hidden border-b border-zinc-800">
-                    <img
-                      src={getPartImage(product)}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
+                  <div className="relative border-b border-zinc-800">
+                    <PartIcon
+                      category={product.category}
+                      iconName={CATEGORY_ICON_NAMES[product.category]}
+                      className="h-40"
+                      iconClassName="h-10 w-10"
                     />
                     {/* Stock badge */}
-                    <span
-                      className={`absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        product.inStock
-                          ? "bg-emerald-900/60 text-emerald-400 border border-emerald-700/40"
-                          : "bg-red-900/60 text-red-400 border border-red-700/40"
-                      }`}
-                    >
-                      {product.inStock ? "In Stock" : "Out of Stock"}
-                    </span>
+                    {!product.inStock ? (
+                      <span className="absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-900/60 text-red-400 border border-red-700/40">
+                        Out of Stock
+                      </span>
+                    ) : isLowStock(product) ? (
+                      <span className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-900/60 text-amber-400 border border-amber-700/40">
+                        <AlertTriangle className="h-3 w-3" /> Only {lowStockCount(product)} left
+                      </span>
+                    ) : (
+                      <span className="absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-900/60 text-emerald-400 border border-emerald-700/40">
+                        In Stock
+                      </span>
+                    )}
                     {/* Discount badge */}
                     {discount > 0 && (
                       <span className="absolute top-2.5 left-2.5 text-[10px] font-bold bg-red-600 text-white px-2 py-0.5 rounded-full">
@@ -320,7 +332,7 @@ export default function BrandPage() {
                     {/* Category / SKU row */}
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wide">
-                        {product.subcategory}
+                        {product.partType}
                       </span>
                       <span className="text-zinc-700">·</span>
                       <span className="text-[10px] font-mono text-zinc-600 truncate">
@@ -329,13 +341,14 @@ export default function BrandPage() {
                     </div>
 
                     {/* Name */}
-                    <h3 className="text-sm font-semibold text-white leading-snug mb-2 line-clamp-2">
+                    <h3 className="text-sm font-semibold text-white leading-snug mb-1.5 line-clamp-2">
                       {product.name}
                     </h3>
 
-                    {/* Description */}
-                    <p className="text-xs text-zinc-500 leading-relaxed mb-3 line-clamp-2">
-                      {product.description}
+                    {/* OEM / shipping */}
+                    <p className="text-[11px] text-zinc-600 font-mono mb-1">OEM {product.oemNumber}</p>
+                    <p className="text-xs text-zinc-500 leading-relaxed mb-3">
+                      {shippingEstimate(product)} · Fits {product.fitment.length} vehicle{product.fitment.length === 1 ? "" : "s"}
                     </p>
 
                     {/* Rating */}

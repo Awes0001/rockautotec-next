@@ -1,25 +1,10 @@
 import type { MetadataRoute } from "next";
+import { CATEGORIES, CATEGORY_SLUGS as CATALOG_CATEGORY_SLUGS, BRAND_SLUGS } from "@/lib/catalog";
+import { MAKE_SLUGS } from "@/lib/makes";
 
 const BASE_URL = "https://www.rockautotec.com";
 
-const CATEGORY_SLUGS = [
-  "engine", "brakes", "suspension", "cooling",
-  "electrical", "fuel", "transmission", "exhaust", "filters", "body",
-];
-
-const MAKE_SLUGS = [
-  "ford", "chevrolet", "gmc", "ram", "dodge", "jeep",
-  "toyota", "honda", "nissan", "hyundai", "kia", "mazda",
-  "subaru", "volkswagen", "audi", "bmw", "mercedes-benz", "lexus",
-  "acura", "infiniti", "cadillac", "buick", "lincoln", "mitsubishi",
-  "volvo", "tesla",
-];
-
-const BRAND_SLUGS = [
-  "bosch", "acdelco", "gates", "monroe", "moog", "ngk",
-  "dorman", "raybestos", "delphi", "fel-pro", "bilstein", "stoptech",
-  "kyb", "denso", "motorcraft", "standard",
-];
+const CATEGORY_SLUGS = CATEGORIES.map((cat) => CATALOG_CATEGORY_SLUGS[cat]);
 
 const STATIC_PAGES: MetadataRoute.Sitemap = [
   { url: BASE_URL,              changeFrequency: "daily",   priority: 1.0 },

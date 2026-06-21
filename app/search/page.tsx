@@ -3,11 +3,13 @@
 import { useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Search, SlidersHorizontal, X, Star, ShoppingCart, ChevronDown, Tag } from "lucide-react";
-import { ALL_PARTS, SLUG_TO_CATEGORY, Part, getPartImage } from "@/components/parts-list";
+import { Search, SlidersHorizontal, X, Star, ShoppingCart, ChevronDown, Tag, AlertTriangle, Check } from "lucide-react";
+import {
+  ALL_PRODUCTS, CATEGORIES, CATEGORY_ICON_NAMES, searchProducts,
+  isLowStock, lowStockCount, shippingEstimate, type Product,
+} from "@/lib/catalog";
 import { useCart } from "@/components/cart-context";
-
-const CATEGORIES = Object.values(SLUG_TO_CATEGORY);
+import PartIcon from "@/components/part-icon";
 
 const PRICE_RANGES = [
   { label: "Under $25",     min: 0,   max: 25 },
@@ -32,6 +34,22 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
+function StockBadge({ part }: { part: Product }) {
+  if (!part.inStock) return <span className="text-[10px] font-semibold text-red-500 shrink-0">Out of Stock</span>;
+  if (isLowStock(part)) {
+    return (
+      <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-400 shrink-0">
+        <AlertTriangle className="h-3 w-3" /> Only {lowStockCount(part)} left
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-500 shrink-0">
+      <Check className="h-3 w-3" /> In Stock
+    </span>
+  );
+}
+
 function SearchContent() {
   const rawParams = useSearchParams();
   const { addToCart } = useCart();
@@ -43,19 +61,25 @@ function SearchContent() {
   const [showFilters, setShowFilters]       = useState(false);
   const [addedId, setAddedId]               = useState<number | null>(null);
 
+  const vehicleYear  = rawParams.get("year")  ?? "";
+  const vehicleMake  = rawParams.get("make")  ?? "";
+  const vehicleModel = rawParams.get("model") ?? "";
+  const hasVehicle = Boolean(vehicleYear && vehicleMake && vehicleModel);
+
   const activeFilterCount = selectedCats.length + (priceRange ? 1 : 0);
 
   const results = useMemo(() => {
-    let parts: Part[] = ALL_PARTS;
+    let parts: Product[] = query.trim() ? searchProducts(query) : ALL_PRODUCTS;
 
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      parts = parts.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.brand.toLowerCase().includes(q) ||
-          p.sku.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q)
+    if (hasVehicle) {
+      const yearNum = parseInt(vehicleYear, 10);
+      parts = parts.filter((p) =>
+        p.fitment.some(
+          (f) =>
+            f.make.toLowerCase() === vehicleMake.toLowerCase() &&
+            f.model.toLowerCase() === vehicleModel.toLowerCase() &&
+            yearNum >= f.yearStart && yearNum <= f.yearEnd
+        )
       );
     }
 
@@ -74,10 +98,10 @@ function SearchContent() {
       case "reviews":    return [...parts].sort((a, b) => b.reviews - a.reviews);
       default:           return parts;
     }
-  }, [query, selectedCats, priceRange, sortBy]);
+  }, [query, selectedCats, priceRange, sortBy, hasVehicle, vehicleYear, vehicleMake, vehicleModel]);
 
-  function handleAddToCart(part: Part) {
-    addToCart({ part: part.name, year: "", make: "", model: "", price: part.price });
+  function handleAddToCart(part: Product) {
+    addToCart({ part: part.name, year: vehicleYear, make: vehicleMake, model: vehicleModel, price: part.price });
     setAddedId(part.id);
     setTimeout(() => setAddedId(null), 1500);
   }
@@ -93,11 +117,20 @@ function SearchContent() {
     setPriceRange(null);
   }
 
-  const savings = (part: Part) => Math.round(((part.was - part.price) / part.was) * 100);
+  const savings = (part: Product) => Math.round(((part.was - part.price) / part.was) * 100);
 
   return (
     <div className="min-h-screen bg-zinc-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        {hasVehicle && (
+          <div className="mb-5 flex items-center gap-2.5 rounded-lg border border-emerald-800/50 bg-emerald-950/30 px-4 py-3 text-sm">
+            <Check className="h-4 w-4 text-emerald-400 shrink-0" />
+            <span className="text-emerald-300">
+              Showing parts confirmed to fit your <strong className="text-white">{vehicleYear} {vehicleMake} {vehicleModel}</strong>
+            </span>
+          </div>
+        )}
 
         {/* ── Search bar ─────────────────────────────────────────────────── */}
         <div className="relative mb-5">
@@ -106,7 +139,7 @@ function SearchContent() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search part name, brand, or SKU…"
+            placeholder="Search part name, brand, SKU, or OEM number…"
             className="w-full rounded-xl border border-zinc-700 bg-zinc-900 text-white placeholder:text-zinc-500 pl-12 pr-10 py-3.5 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
           />
           {query && (
@@ -186,7 +219,7 @@ function SearchContent() {
               </div>
               <div className="space-y-1.5">
                 {CATEGORIES.map((cat) => {
-                  const count = ALL_PARTS.filter((p) => p.category === cat).length;
+                  const count = ALL_PRODUCTS.filter((p) => p.category === cat).length;
                   return (
                     <label key={cat} className="flex items-center gap-2.5 cursor-pointer group py-0.5">
                       <input
@@ -269,7 +302,7 @@ function SearchContent() {
                 onChange={(e) => setSortBy(e.target.value as SortKey)}
                 className="rounded-lg border border-zinc-700 bg-zinc-800 text-zinc-300 px-3 py-2 text-xs focus:outline-none focus:border-red-500 cursor-pointer"
               >
-                <option value="relevance">Sort: Relevance</option>
+                <option value="relevance">Sort: Best Match</option>
                 <option value="price-asc">Price: Low to High</option>
                 <option value="price-desc">Price: High to Low</option>
                 <option value="rating">Highest Rated</option>
@@ -299,13 +332,12 @@ function SearchContent() {
                     key={part.id}
                     className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-zinc-700 transition-all duration-150 flex flex-col"
                   >
-                    {/* Image */}
-                    <Link href={`/part/${part.id}`} className="relative h-36 bg-zinc-800 overflow-hidden block group">
-                      <img
-                        src={getPartImage(part)}
-                        alt={part.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
+                    <Link href={`/part/${part.id}`} className="relative block">
+                      <PartIcon
+                        category={part.category}
+                        iconName={CATEGORY_ICON_NAMES[part.category]}
+                        className="h-32"
+                        iconClassName="h-9 w-9"
                       />
                       {savings(part) > 0 && (
                         <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">
@@ -314,21 +346,15 @@ function SearchContent() {
                       )}
                     </Link>
 
-                    {/* Category label */}
                     <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-zinc-800 bg-zinc-950/60">
                       <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider truncate">
                         {part.category}
                       </span>
-                      {part.inStock ? (
-                        <span className="text-[10px] font-semibold text-emerald-500 shrink-0">In Stock</span>
-                      ) : (
-                        <span className="text-[10px] font-semibold text-red-500 shrink-0">Out of Stock</span>
-                      )}
+                      <StockBadge part={part} />
                     </div>
 
-                    {/* Card body */}
                     <div className="p-4 flex-1 flex flex-col">
-                      <div className="mb-3">
+                      <div className="mb-2">
                         <Link
                           href={`/part/${part.id}`}
                           className="text-sm font-semibold text-white hover:text-red-400 leading-snug line-clamp-2 transition-colors"
@@ -336,17 +362,18 @@ function SearchContent() {
                           {part.name}
                         </Link>
                         <p className="text-xs text-zinc-500 mt-0.5">
-                          {part.brand} ·{" "}
-                          <span className="font-mono">{part.sku}</span>
+                          {part.brand} · <span className="font-mono">{part.sku}</span>
                         </p>
+                        <p className="text-[11px] text-zinc-600 font-mono mt-0.5">OEM {part.oemNumber}</p>
                       </div>
 
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-2 mb-2">
                         <StarRating rating={part.rating} />
                         <span className="text-[11px] text-zinc-500">
                           {part.rating} ({part.reviews.toLocaleString()})
                         </span>
                       </div>
+                      <p className="text-[11px] text-zinc-500 mb-3">{shippingEstimate(part)}</p>
 
                       <div className="mt-auto flex items-end justify-between gap-2">
                         <div>

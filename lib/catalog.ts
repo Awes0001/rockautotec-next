@@ -1,129 +1,406 @@
 /**
  * lib/catalog.ts
- * Local product catalog used by brand pages and other non-Supabase pages.
- * All data is static — no server calls required.
+ * Single source of truth for the RockAutoTec parts catalog.
+ * Products are generated deterministically from a fixed set of real part-type
+ * templates × real brands × real vehicle fitment combinations — not random,
+ * not hand-typed lorem data. Re-running this module always produces the same
+ * 1,000-product catalog.
  */
+
+import { MAKES } from "@/lib/makes";
+
+// ─── Categories ────────────────────────────────────────────────────────────────
+
+export const CATEGORIES = [
+  "Brakes", "Suspension", "Engine", "Cooling", "Electrical",
+  "Fuel System", "Ignition", "Exhaust", "Lighting", "Body Parts",
+] as const;
+
+export type Category = (typeof CATEGORIES)[number];
+
+export const CATEGORY_SLUGS: Record<Category, string> = {
+  Brakes: "brakes",
+  Suspension: "suspension",
+  Engine: "engine",
+  Cooling: "cooling",
+  Electrical: "electrical",
+  "Fuel System": "fuel-system",
+  Ignition: "ignition",
+  Exhaust: "exhaust",
+  Lighting: "lighting",
+  "Body Parts": "body-parts",
+};
+
+export const SLUG_TO_CATEGORY: Record<string, Category> = Object.fromEntries(
+  (Object.entries(CATEGORY_SLUGS) as [Category, string][]).map(([cat, slug]) => [slug, cat])
+);
+
+/** Icon name (lucide-react export) used to render this category — see components/part-icon.tsx */
+export const CATEGORY_ICON_NAMES: Record<Category, string> = {
+  Brakes: "Disc",
+  Suspension: "Gauge",
+  Engine: "Settings",
+  Cooling: "Thermometer",
+  Electrical: "Zap",
+  "Fuel System": "Fuel",
+  Ignition: "Flame",
+  Exhaust: "Wind",
+  Lighting: "Lightbulb",
+  "Body Parts": "Car",
+};
+
+// ─── Brands ────────────────────────────────────────────────────────────────────
+
+export const BRANDS = [
+  "Bosch", "Denso", "NGK", "Gates", "Monroe",
+  "KYB", "Moog", "ACDelco", "Motorcraft", "Standard Motor Products",
+] as const;
+
+export type Brand = (typeof BRANDS)[number];
+
+export const MANUFACTURER_NAMES: Record<Brand, string> = {
+  Bosch: "Robert Bosch LLC",
+  Denso: "Denso International America, Inc.",
+  NGK: "NGK Spark Plugs (U.S.A.), Inc.",
+  Gates: "Gates Corporation",
+  Monroe: "Tenneco Inc. (Monroe)",
+  KYB: "KYB Americas Corporation",
+  Moog: "Federal-Mogul Motorparts (MOOG)",
+  ACDelco: "General Motors LLC (ACDelco)",
+  Motorcraft: "Ford Motor Company (Motorcraft)",
+  "Standard Motor Products": "Standard Motor Products, Inc.",
+};
+
+const BRAND_CODES: Record<Brand, string> = {
+  Bosch: "BSH",
+  Denso: "DEN",
+  NGK: "NGK",
+  Gates: "GAT",
+  Monroe: "MON",
+  KYB: "KYB",
+  Moog: "MOG",
+  ACDelco: "ACD",
+  Motorcraft: "MTC",
+  "Standard Motor Products": "SMP",
+};
+
+export function brandSlug(brand: string): string {
+  return brand.toLowerCase().replace(/\s+/g, "-");
+}
+
+export const BRAND_SLUGS: string[] = BRANDS.map(brandSlug);
+
+export const BRAND_DISPLAY_NAMES: Record<string, string> = Object.fromEntries(
+  BRANDS.map((b) => [brandSlug(b), b])
+);
+
+// ─── Part-type templates (10 per category × 10 categories = 100 templates) ────
+
+interface PartTemplate {
+  category: Category;
+  partType: string;
+  namePattern: string; // "{brand}" placeholder substituted with brand name
+  priceMin: number;
+  priceMax: number;
+}
+
+const TEMPLATES: PartTemplate[] = [
+  // Brakes
+  { category: "Brakes", partType: "Brake Pads",        namePattern: "{brand} Brake Pad Set – Front",          priceMin: 28,  priceMax: 79  },
+  { category: "Brakes", partType: "Brake Pads",        namePattern: "{brand} Brake Pad Set – Rear",           priceMin: 26,  priceMax: 72  },
+  { category: "Brakes", partType: "Brake Rotors",      namePattern: "{brand} Brake Rotor – Front (Each)",     priceMin: 32,  priceMax: 98  },
+  { category: "Brakes", partType: "Brake Rotors",      namePattern: "{brand} Brake Rotor – Rear (Each)",      priceMin: 29,  priceMax: 89  },
+  { category: "Brakes", partType: "Brake Calipers",    namePattern: "{brand} Brake Caliper – Front",          priceMin: 64,  priceMax: 189 },
+  { category: "Brakes", partType: "Brake Drums",       namePattern: "{brand} Brake Drum (Each)",              priceMin: 34,  priceMax: 74  },
+  { category: "Brakes", partType: "Brake Shoes",       namePattern: "{brand} Brake Shoe Set – Rear",          priceMin: 24,  priceMax: 58  },
+  { category: "Brakes", partType: "Brake Hoses",       namePattern: "{brand} Brake Hose – Front",             priceMin: 14,  priceMax: 36  },
+  { category: "Brakes", partType: "Brake Fluid",       namePattern: "{brand} DOT 4 Brake Fluid (32oz)",       priceMin: 8,   priceMax: 18  },
+  { category: "Brakes", partType: "ABS Sensors",       namePattern: "{brand} ABS Wheel Speed Sensor",         priceMin: 32,  priceMax: 84  },
+
+  // Suspension
+  { category: "Suspension", partType: "Shocks",         namePattern: "{brand} Shock Absorber – Front (Each)",  priceMin: 44,  priceMax: 139 },
+  { category: "Suspension", partType: "Shocks",         namePattern: "{brand} Shock Absorber – Rear (Each)",   priceMin: 42,  priceMax: 129 },
+  { category: "Suspension", partType: "Struts",         namePattern: "{brand} Strut Assembly – Front",         priceMin: 89,  priceMax: 249 },
+  { category: "Suspension", partType: "Control Arms",   namePattern: "{brand} Control Arm – Front Lower",      priceMin: 54,  priceMax: 149 },
+  { category: "Suspension", partType: "Ball Joints",    namePattern: "{brand} Ball Joint – Front Upper",       priceMin: 26,  priceMax: 68  },
+  { category: "Suspension", partType: "Steering",       namePattern: "{brand} Tie Rod End – Outer",            priceMin: 18,  priceMax: 49  },
+  { category: "Suspension", partType: "Sway Bar",       namePattern: "{brand} Sway Bar Link Kit",              priceMin: 22,  priceMax: 58  },
+  { category: "Suspension", partType: "Wheel Bearings", namePattern: "{brand} Wheel Bearing & Hub Assembly",   priceMin: 48,  priceMax: 138 },
+  { category: "Suspension", partType: "Strut Mounts",   namePattern: "{brand} Strut Mount",                    priceMin: 28,  priceMax: 69  },
+  { category: "Suspension", partType: "Coil Springs",   namePattern: "{brand} Coil Spring – Front (Each)",     priceMin: 38,  priceMax: 99  },
+
+  // Engine
+  { category: "Engine", partType: "Timing",          namePattern: "{brand} Timing Belt Kit with Water Pump",  priceMin: 89,  priceMax: 219 },
+  { category: "Engine", partType: "Timing",          namePattern: "{brand} Timing Chain Kit",                 priceMin: 99,  priceMax: 259 },
+  { category: "Engine", partType: "Gaskets & Seals", namePattern: "{brand} Head Gasket Set",                  priceMin: 64,  priceMax: 169 },
+  { category: "Engine", partType: "Gaskets & Seals", namePattern: "{brand} Valve Cover Gasket Set",           priceMin: 19,  priceMax: 48  },
+  { category: "Engine", partType: "Pumps",           namePattern: "{brand} Oil Pump",                         priceMin: 44,  priceMax: 118 },
+  { category: "Engine", partType: "Engine Mounts",   namePattern: "{brand} Engine Mount",                     priceMin: 32,  priceMax: 89  },
+  { category: "Engine", partType: "Engine Internals",namePattern: "{brand} Piston Ring Set",                  priceMin: 58,  priceMax: 149 },
+  { category: "Engine", partType: "Gaskets & Seals", namePattern: "{brand} Crankshaft Seal Kit",              priceMin: 16,  priceMax: 39  },
+  { category: "Engine", partType: "Belts",           namePattern: "{brand} Serpentine Belt",                  priceMin: 18,  priceMax: 44  },
+  { category: "Engine", partType: "Engine Internals",namePattern: "{brand} Engine Bearing Set",                priceMin: 36,  priceMax: 94  },
+
+  // Cooling
+  { category: "Cooling", partType: "Radiators",        namePattern: "{brand} Radiator Assembly",               priceMin: 124, priceMax: 329 },
+  { category: "Cooling", partType: "Radiators",        namePattern: "{brand} Radiator Cap",                    priceMin: 6,   priceMax: 16  },
+  { category: "Cooling", partType: "Cooling Fans",     namePattern: "{brand} Cooling Fan Assembly",             priceMin: 89,  priceMax: 219 },
+  { category: "Cooling", partType: "Thermostats",      namePattern: "{brand} Thermostat with Gasket",           priceMin: 14,  priceMax: 32  },
+  { category: "Cooling", partType: "Coolant & Antifreeze", namePattern: "{brand} Coolant Reservoir",            priceMin: 22,  priceMax: 58  },
+  { category: "Cooling", partType: "Hoses",            namePattern: "{brand} Heater Hose Kit",                  priceMin: 18,  priceMax: 46  },
+  { category: "Cooling", partType: "Coolant & Antifreeze", namePattern: "{brand} Antifreeze/Coolant (1 Gal)",  priceMin: 16,  priceMax: 28  },
+  { category: "Cooling", partType: "Hoses",            namePattern: "{brand} Radiator Hose – Upper",            priceMin: 14,  priceMax: 36  },
+  { category: "Cooling", partType: "Hoses",            namePattern: "{brand} Radiator Hose – Lower",            priceMin: 14,  priceMax: 36  },
+  { category: "Cooling", partType: "Cooling Fans",     namePattern: "{brand} Fan Clutch",                       priceMin: 44,  priceMax: 119 },
+
+  // Electrical
+  { category: "Electrical", partType: "Alternators",   namePattern: "{brand} Alternator – Remanufactured",     priceMin: 109, priceMax: 259 },
+  { category: "Electrical", partType: "Starters",      namePattern: "{brand} Starter Motor – Remanufactured",  priceMin: 99,  priceMax: 229 },
+  { category: "Electrical", partType: "Batteries",     namePattern: "{brand} Automotive Battery (Group 35)",   priceMin: 119, priceMax: 249 },
+  { category: "Electrical", partType: "Sensors",       namePattern: "{brand} Mass Air Flow Sensor",             priceMin: 54,  priceMax: 139 },
+  { category: "Electrical", partType: "Sensors",       namePattern: "{brand} Oxygen Sensor – Upstream",         priceMin: 28,  priceMax: 74  },
+  { category: "Electrical", partType: "Modules",       namePattern: "{brand} ABS Control Module",               priceMin: 149, priceMax: 379 },
+  { category: "Electrical", partType: "Window Parts",  namePattern: "{brand} Window Regulator Motor",           priceMin: 38,  priceMax: 94  },
+  { category: "Electrical", partType: "Switches",      namePattern: "{brand} Power Window Switch",              priceMin: 18,  priceMax: 46  },
+  { category: "Electrical", partType: "Charging System", namePattern: "{brand} Voltage Regulator",              priceMin: 22,  priceMax: 58  },
+  { category: "Electrical", partType: "Wiring & Harnesses", namePattern: "{brand} Engine Wiring Harness",       priceMin: 64,  priceMax: 179 },
+
+  // Fuel System
+  { category: "Fuel System", partType: "Fuel Pumps",      namePattern: "{brand} Fuel Pump Module Assembly",    priceMin: 109, priceMax: 259 },
+  { category: "Fuel System", partType: "Fuel Injectors",  namePattern: "{brand} Fuel Injector",                priceMin: 32,  priceMax: 89  },
+  { category: "Fuel System", partType: "Filters",         namePattern: "{brand} Fuel Filter",                  priceMin: 12,  priceMax: 29  },
+  { category: "Fuel System", partType: "Throttle Body",   namePattern: "{brand} Throttle Body Assembly",       priceMin: 124, priceMax: 289 },
+  { category: "Fuel System", partType: "Fuel System Components", namePattern: "{brand} Fuel Pressure Regulator", priceMin: 34, priceMax: 84 },
+  { category: "Fuel System", partType: "Fuel Tanks",      namePattern: "{brand} Fuel Tank",                    priceMin: 169, priceMax: 339 },
+  { category: "Fuel System", partType: "Fuel System Components", namePattern: "{brand} Fuel Sending Unit",      priceMin: 48,  priceMax: 109 },
+  { category: "Fuel System", partType: "Fuel System Components", namePattern: "{brand} Idle Air Control Valve", priceMin: 36, priceMax: 89 },
+  { category: "Fuel System", partType: "Emission Components", namePattern: "{brand} Vapor Canister Purge Valve", priceMin: 18, priceMax: 44 },
+  { category: "Fuel System", partType: "Hoses",            namePattern: "{brand} Fuel Line Hose (Per Foot)",    priceMin: 3,   priceMax: 9   },
+
+  // Ignition
+  { category: "Ignition", partType: "Spark Plugs",     namePattern: "{brand} Spark Plug Set (4-Pack)",         priceMin: 19,  priceMax: 58  },
+  { category: "Ignition", partType: "Ignition Components", namePattern: "{brand} Ignition Coil",               priceMin: 24,  priceMax: 64  },
+  { category: "Ignition", partType: "Wiring & Harnesses", namePattern: "{brand} Spark Plug Wire Set",          priceMin: 22,  priceMax: 54  },
+  { category: "Ignition", partType: "Switches",        namePattern: "{brand} Ignition Switch",                  priceMin: 28,  priceMax: 69  },
+  { category: "Ignition", partType: "Ignition Components", namePattern: "{brand} Distributor Cap",             priceMin: 14,  priceMax: 38  },
+  { category: "Ignition", partType: "Ignition Components", namePattern: "{brand} Distributor Rotor",           priceMin: 9,   priceMax: 24  },
+  { category: "Ignition", partType: "Sensors",         namePattern: "{brand} Crankshaft Position Sensor",       priceMin: 28,  priceMax: 74  },
+  { category: "Ignition", partType: "Sensors",         namePattern: "{brand} Camshaft Position Sensor",         priceMin: 26,  priceMax: 68  },
+  { category: "Ignition", partType: "Ignition Components", namePattern: "{brand} Ignition Control Module",      priceMin: 44,  priceMax: 119 },
+  { category: "Ignition", partType: "Glow Plugs",      namePattern: "{brand} Diesel Glow Plug",                 priceMin: 16,  priceMax: 38  },
+
+  // Exhaust
+  { category: "Exhaust", partType: "Mufflers",            namePattern: "{brand} Muffler",                       priceMin: 64,  priceMax: 169 },
+  { category: "Exhaust", partType: "Catalytic Converters", namePattern: "{brand} Catalytic Converter – Direct Fit", priceMin: 149, priceMax: 339 },
+  { category: "Exhaust", partType: "Exhaust Manifolds",   namePattern: "{brand} Exhaust Manifold",              priceMin: 94,  priceMax: 219 },
+  { category: "Exhaust", partType: "Exhaust Pipes",       namePattern: "{brand} Exhaust Flex Pipe",             priceMin: 28,  priceMax: 68  },
+  { category: "Exhaust", partType: "Exhaust Hardware",    namePattern: "{brand} Exhaust Clamp (2-Pack)",        priceMin: 6,   priceMax: 16  },
+  { category: "Exhaust", partType: "Mufflers",            namePattern: "{brand} Resonator",                     priceMin: 44,  priceMax: 109 },
+  { category: "Exhaust", partType: "Gaskets & Seals",     namePattern: "{brand} Exhaust Manifold Gasket Set",   priceMin: 12,  priceMax: 32  },
+  { category: "Exhaust", partType: "Exhaust Tips",        namePattern: "{brand} Exhaust Tip",                   priceMin: 22,  priceMax: 58  },
+  { category: "Exhaust", partType: "Exhaust Pipes",       namePattern: "{brand} Tail Pipe",                     priceMin: 34,  priceMax: 84  },
+  { category: "Exhaust", partType: "Sensors",             namePattern: "{brand} O2 Sensor Extension Harness",   priceMin: 14,  priceMax: 34  },
+
+  // Lighting
+  { category: "Lighting", partType: "Lighting",      namePattern: "{brand} Headlight Assembly – Driver Side",  priceMin: 84,  priceMax: 219 },
+  { category: "Lighting", partType: "Lighting",      namePattern: "{brand} Tail Light Assembly – Driver Side", priceMin: 64,  priceMax: 169 },
+  { category: "Lighting", partType: "Lighting",      namePattern: "{brand} Fog Light Assembly",                 priceMin: 38,  priceMax: 94  },
+  { category: "Lighting", partType: "Lighting",      namePattern: "{brand} Turn Signal Bulb (2-Pack)",          priceMin: 5,   priceMax: 14  },
+  { category: "Lighting", partType: "Lighting",      namePattern: "{brand} Headlight Bulb – Halogen (2-Pack)",  priceMin: 9,   priceMax: 24  },
+  { category: "Lighting", partType: "Lighting",      namePattern: "{brand} LED Interior Light Kit",             priceMin: 14,  priceMax: 36  },
+  { category: "Lighting", partType: "Switches",      namePattern: "{brand} Headlight Switch",                   priceMin: 22,  priceMax: 54  },
+  { category: "Lighting", partType: "Lighting",      namePattern: "{brand} Brake Light Bulb (2-Pack)",          priceMin: 5,   priceMax: 13  },
+  { category: "Lighting", partType: "Modules",       namePattern: "{brand} Daytime Running Light Module",       priceMin: 38,  priceMax: 94  },
+  { category: "Lighting", partType: "Detailing Products", namePattern: "{brand} Headlight Restoration Kit",     priceMin: 14,  priceMax: 28  },
+
+  // Body Parts
+  { category: "Body Parts", partType: "Mirrors",        namePattern: "{brand} Side Mirror Assembly – Driver Side", priceMin: 54,  priceMax: 139 },
+  { category: "Body Parts", partType: "Door Hardware",  namePattern: "{brand} Door Handle – Exterior",          priceMin: 18,  priceMax: 48  },
+  { category: "Body Parts", partType: "Hood Parts",     namePattern: "{brand} Hood Strut / Lift Support (2-Pack)", priceMin: 24, priceMax: 58 },
+  { category: "Body Parts", partType: "Body Panels",    namePattern: "{brand} Fender Assembly – Front",         priceMin: 124, priceMax: 269 },
+  { category: "Body Parts", partType: "Bumper Components", namePattern: "{brand} Bumper Cover – Front",         priceMin: 149, priceMax: 329 },
+  { category: "Body Parts", partType: "Body Panels",    namePattern: "{brand} Grille Assembly",                  priceMin: 64,  priceMax: 169 },
+  { category: "Body Parts", partType: "Window Parts",   namePattern: "{brand} Window Regulator – Manual",        priceMin: 44,  priceMax: 109 },
+  { category: "Body Parts", partType: "Floor Liners & Mats", namePattern: "{brand} Floor Liner Set (4-Piece)",  priceMin: 64,  priceMax: 149 },
+  { category: "Body Parts", partType: "Wiper Blades",   namePattern: "{brand} Wiper Blade Set (2-Pack)",         priceMin: 18,  priceMax: 42  },
+  { category: "Body Parts", partType: "Pumps",          namePattern: "{brand} Windshield Washer Pump",           priceMin: 14,  priceMax: 34  },
+];
+
+// ─── Vehicle fitment data ──────────────────────────────────────────────────────
+
+export const ENGINES = [
+  "1.5L 4-Cyl Turbo", "1.8L 4-Cyl", "2.0L 4-Cyl Turbo", "2.4L 4-Cyl", "2.5L 4-Cyl",
+  "3.0L V6", "3.5L V6", "3.6L V6", "5.0L V8", "5.7L V8", "6.2L V8", "2.0L 4-Cyl Hybrid",
+];
+
+export interface FitmentEntry {
+  make: string;
+  model: string;
+  yearStart: number;
+  yearEnd: number;
+  engine: string;
+}
+
+function generateFitment(seed: number): FitmentEntry[] {
+  const count = 2 + (seed % 3); // 2-4 vehicles per part
+  const entries: FitmentEntry[] = [];
+  for (let i = 0; i < count; i++) {
+    const make = MAKES[(seed + i * 5) % MAKES.length];
+    const model = make.models[(seed + i * 3) % make.models.length];
+    const years = make.years; // descending, e.g. 2025..2000
+    const endIdx = (seed + i) % Math.max(years.length - 4, 1);
+    const span = 3 + (seed % 4); // 3-6 year span
+    const yearEnd = years[endIdx];
+    const yearStart = years[Math.min(endIdx + span, years.length - 1)];
+    const engine = ENGINES[(seed + i * 2) % ENGINES.length];
+    entries.push({ make: make.name, model, yearStart, yearEnd, engine });
+  }
+  return entries;
+}
+
+// ─── Product type & generation ─────────────────────────────────────────────────
 
 export interface Product {
   id: number;
   name: string;
-  brand: string;
+  brand: Brand;
+  manufacturer: string;
   sku: string;
+  oemNumber: string;
+  interchangeNumbers: string[];
   price: number;
   was: number;
   rating: number;
   reviews: number;
-  category: string;
-  subcategory: string;
+  category: Category;
+  partType: string;
   inStock: boolean;
-  description: string;
+  fitment: FitmentEntry[];
 }
 
-// ─── Full catalog (brand-keyed) ───────────────────────────────────────────────
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
 
-const ALL_PRODUCTS: Product[] = [
-  // ── Bosch ────────────────────────────────────────────────────────────────
-  { id:1001, brand:"Bosch", name:"Bosch QuietCast Premium Brake Pad Set",      sku:"BC0905",        price:42.99,  was:67.99,  rating:4.8, reviews:2847,  category:"Brake System",          subcategory:"Brake Pads",       inStock:true,  description:"OE-style friction formulation for quiet stops and long pad life." },
-  { id:1002, brand:"Bosch", name:"Bosch Remanufactured Alternator",             sku:"BOSC-AL0782X",  price:148.99, was:209.99, rating:4.6, reviews:891,   category:"Electrical & Lighting", subcategory:"Charging System",  inStock:true,  description:"100% new internal components; tested to OE standards." },
-  { id:1003, brand:"Bosch", name:"Bosch ICON Premium Wiper Blade (2-Pack)",     sku:"BOSC-26A18",    price:34.99,  was:49.99,  rating:4.8, reviews:5132,  category:"Filters & Maintenance", subcategory:"Wiper Blades",     inStock:true,  description:"Exclusive curved beam design for all-season streak-free wiping." },
-  { id:1004, brand:"Bosch", name:"Bosch Fuel Injector Set (4-Pack)",            sku:"BOSC-0280156163",price:124.99,was:174.99, rating:4.8, reviews:891,   category:"Fuel System",           subcategory:"Fuel Injectors",   inStock:true,  description:"OE-matched spray pattern; compatible with flex-fuel applications." },
-  { id:1005, brand:"Bosch", name:"Bosch Distance Plus Wiper Blades (2-Pack)",   sku:"BOSC-3397001539",price:24.99, was:36.99,  rating:4.7, reviews:4532,  category:"Filters & Maintenance", subcategory:"Wiper Blades",     inStock:true,  description:"Up to 40% longer life than conventional wiper blades." },
-  { id:1006, brand:"Bosch", name:"Bosch Oxygen Sensor – Upstream",              sku:"BOSC-17014",    price:38.99,  was:57.99,  rating:4.7, reviews:2134,  category:"Electrical & Lighting", subcategory:"Sensors",          inStock:true,  description:"Premium OE fit; wide-band sensor with OEM-level accuracy." },
-  { id:1007, brand:"Bosch", name:"Bosch Cabin Air Filter Insert",               sku:"BOSC-C3688WS",  price:18.99,  was:27.99,  rating:4.7, reviews:3421,  category:"Filters & Maintenance", subcategory:"Air Filters",      inStock:true,  description:"Activated carbon layer blocks pollen, dust, and odors." },
+function generateProducts(): Product[] {
+  const products: Product[] = [];
+  let id = 10000;
 
-  // ── Denso ────────────────────────────────────────────────────────────────
-  { id:2001, brand:"Denso", name:"Denso Oxygen Sensor – Universal",             sku:"DS2345813",     price:28.49,  was:45.00,  rating:4.7, reviews:1523,  category:"Electrical & Lighting", subcategory:"Sensors",          inStock:true,  description:"OE-quality zirconia element; direct OEM replacement." },
-  { id:2002, brand:"Denso", name:"Denso Iridium Long Life Spark Plug (4-Pack)", sku:"DENSO-IK20",    price:36.99,  was:54.99,  rating:4.8, reviews:4231,  category:"Engine Parts",          subcategory:"Spark Plugs",      inStock:true,  description:"1.1mm ultra-fine iridium tip for maximum ignitability." },
-  { id:2003, brand:"Denso", name:"Denso Water Pump with Gasket",                sku:"DENSO-280-0174",price:74.99,  was:104.99, rating:4.7, reviews:1102,  category:"Cooling System",        subcategory:"Water Pumps",      inStock:true,  description:"OE-matched impeller design for optimal coolant flow." },
-  { id:2004, brand:"Denso", name:"Denso Mass Airflow Sensor",                   sku:"DENSO-197-6221",price:84.99,  was:119.99, rating:4.6, reviews:892,   category:"Electrical & Lighting", subcategory:"Sensors",          inStock:true,  description:"100% OEM match with precision hot-wire sensing element." },
-  { id:2005, brand:"Denso", name:"Denso Starter Motor – Remanufactured",        sku:"DENSO-280-0137",price:139.99, was:194.99, rating:4.6, reviews:543,   category:"Electrical & Lighting", subcategory:"Starting System",  inStock:true,  description:"OE specifications with 100% quality tested performance." },
-  { id:2006, brand:"Denso", name:"Denso AC Compressor with Clutch",             sku:"DENSO-471-1223",price:214.99, was:299.99, rating:4.5, reviews:418,   category:"Electrical & Lighting", subcategory:"AC System",        inStock:true,  description:"Factory new compressor; OEM-matched for direct bolt-on fit." },
+  TEMPLATES.forEach((tpl, tplIndex) => {
+    BRANDS.forEach((brand, brandIndex) => {
+      id += 1;
+      const seed = tplIndex * 10 + brandIndex;
+      const code = BRAND_CODES[brand];
 
-  // ── NGK ──────────────────────────────────────────────────────────────────
-  { id:3001, brand:"NGK", name:"NGK Iridium IX Spark Plug Set (4-Pack)",       sku:"NGK4218",        price:34.99,  was:52.00,  rating:4.8, reviews:3201,  category:"Engine Parts",          subcategory:"Spark Plugs",      inStock:true,  description:"Iridium-tipped electrode for high ignitability and longevity." },
-  { id:3002, brand:"NGK", name:"NGK Laser Platinum Spark Plug Set (6-Pack)",   sku:"NGK-ZFR5FP-11G", price:56.99,  was:82.99,  rating:4.7, reviews:1876,  category:"Engine Parts",          subcategory:"Spark Plugs",      inStock:true,  description:"Double platinum construction; up to 105,000-mile service life." },
-  { id:3003, brand:"NGK", name:"NGK NTK Oxygen Sensor – Downstream",           sku:"NGK-25037",      price:32.99,  was:49.99,  rating:4.7, reviews:1234,  category:"Electrical & Lighting", subcategory:"Sensors",          inStock:true,  description:"OE-style titania or zirconia element; plug-and-play fitment." },
-  { id:3004, brand:"NGK", name:"NGK Spark Plug Wire Set",                      sku:"NGK-9929",       price:29.99,  was:44.99,  rating:4.6, reviews:1234,  category:"Electrical & Lighting", subcategory:"Ignition",         inStock:true,  description:"Spiral-wound core; suppresses EMI for modern ECU compatibility." },
-  { id:3005, brand:"NGK", name:"NGK V-Power Spark Plug Set (8-Pack)",          sku:"NGK-TR6",        price:18.99,  was:28.99,  rating:4.6, reviews:2781,  category:"Engine Parts",          subcategory:"Spark Plugs",      inStock:true,  description:"V-groove center electrode for fast flame kernel growth." },
+      // Deterministic but varied pricing within the template's range
+      const range = tpl.priceMax - tpl.priceMin;
+      const price = round2(tpl.priceMin + ((seed * 37) % 100) / 100 * range);
+      const markup = 1.35 + ((seed * 13) % 30) / 100; // 1.35x–1.64x "was" price
+      const was = round2(price * markup);
 
-  // ── Monroe ───────────────────────────────────────────────────────────────
-  { id:4001, brand:"Monroe", name:"Monroe OESpectrum Shock Absorber – Rear Pair", sku:"MN5975",      price:89.99,  was:120.00, rating:4.9, reviews:986,   category:"Suspension & Steering", subcategory:"Shocks",           inStock:true,  description:"Comfort-tuned to match OEM vehicle handling characteristics." },
-  { id:4002, brand:"Monroe", name:"Monroe Quick-Strut Complete Assembly",          sku:"MN172144",    price:159.99, was:219.99, rating:4.8, reviews:1231,  category:"Suspension & Steering", subcategory:"Struts",           inStock:true,  description:"All-in-one unit; mount, spring, bumper, and strut included." },
-  { id:4003, brand:"Monroe", name:"Monroe Reflex Shock Absorber – Front Pair",     sku:"MN-32369",    price:94.99,  was:129.99, rating:4.7, reviews:742,   category:"Suspension & Steering", subcategory:"Shocks",           inStock:true,  description:"Velocity-sensitive valving for balanced ride and control." },
-  { id:4004, brand:"Monroe", name:"Monroe Sensa-Trac Load Adjusting Shock",        sku:"MN-58640",    price:54.99,  was:79.99,  rating:4.7, reviews:1543,  category:"Suspension & Steering", subcategory:"Shocks",           inStock:true,  description:"Self-adjusting for towing and hauling applications." },
+      const rating = round2(4.3 + ((seed * 11) % 7) / 10); // 4.3–4.9
+      const reviews = 80 + ((seed * 53) % 4800);
 
-  // ── Moog ─────────────────────────────────────────────────────────────────
-  { id:5001, brand:"Moog", name:"Moog Wheel Bearing & Hub Assembly",           sku:"MG512223",       price:78.99,  was:105.00, rating:4.8, reviews:1834,  category:"Suspension & Steering", subcategory:"Wheel Bearings",   inStock:true,  description:"Forged steel housing; pre-greased for long service life." },
-  { id:5002, brand:"Moog", name:"Moog Stabilizer Bar Link Kit",                sku:"MOGK750088",     price:34.99,  was:52.99,  rating:4.6, reviews:2341,  category:"Suspension & Steering", subcategory:"Sway Bar",         inStock:true,  description:"Problem Solver design addresses OE design weaknesses." },
-  { id:5003, brand:"Moog", name:"Moog Tie Rod End – Front Outer",              sku:"MOGES3486",      price:29.99,  was:44.99,  rating:4.7, reviews:1456,  category:"Suspension & Steering", subcategory:"Steering",         inStock:true,  description:"High-strength alloy housing; factory-installed boot." },
-  { id:5004, brand:"Moog", name:"Moog Front Upper Ball Joint",                 sku:"MOGK8695T",      price:42.99,  was:62.99,  rating:4.7, reviews:1102,  category:"Suspension & Steering", subcategory:"Ball Joints",      inStock:true,  description:"Metal bearing design for strength and durability." },
-  { id:5005, brand:"Moog", name:"Moog Control Arm with Ball Joint – Front Lower",sku:"MOGCMS401204", price:94.99,  was:134.99, rating:4.8, reviews:812,   category:"Suspension & Steering", subcategory:"Control Arms",     inStock:true,  description:"Includes pre-installed ball joint for easy installation." },
+      const oemNumber = `${code}-${(100000 + id * 7) % 999999}`;
+      const interchangeNumbers = [
+        `DOR${(200000 + id * 3) % 999999}`,
+        `RAY${(300000 + id * 11) % 999999}`,
+      ];
 
-  // ── Gates ────────────────────────────────────────────────────────────────
-  { id:6001, brand:"Gates", name:"Gates Timing Belt Kit with Water Pump",      sku:"TCKWP244A",      price:124.99, was:189.99, rating:4.6, reviews:748,   category:"Engine Parts",          subcategory:"Timing",           inStock:true,  description:"Complete OE replacement kit; tensioner and idler included." },
-  { id:6002, brand:"Gates", name:"Gates Water Pump",                           sku:"GTWP341A",       price:78.99,  was:109.99, rating:4.7, reviews:1543,  category:"Cooling System",        subcategory:"Water Pumps",      inStock:true,  description:"OE-matched impeller and seal for dependable coolant flow." },
-  { id:6003, brand:"Gates", name:"Gates Serpentine Belt",                      sku:"GT-K060842",     price:28.99,  was:42.99,  rating:4.7, reviews:2134,  category:"Engine Parts",          subcategory:"Belts",            inStock:true,  description:"EPDM construction; built to exceed OEM specifications." },
-  { id:6004, brand:"Gates", name:"Gates Thermostat with Gasket",               sku:"GT33568",        price:18.99,  was:28.99,  rating:4.6, reviews:2134,  category:"Cooling System",        subcategory:"Thermostat",       inStock:true,  description:"Wax-pellet design for consistent coolant temperature control." },
-  { id:6005, brand:"Gates", name:"Gates Fuel Line Hose (Per Foot)",            sku:"GT27072",        price:4.99,   was:7.99,   rating:4.5, reviews:2341,  category:"Fuel System",           subcategory:"Hoses & Lines",    inStock:true,  description:"SAE 30R9 rated; compatible with ethanol-blended fuels." },
-  { id:6006, brand:"Gates", name:"Gates Timing Chain Kit",                     sku:"GT-TCK328",      price:164.99, was:229.99, rating:4.6, reviews:432,   category:"Engine Parts",          subcategory:"Timing",           inStock:true,  description:"OE-quality chain, tensioner, guides, and hardware." },
+      const sku = `${code}${tpl.partType.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase()}${id}`;
 
-  // ── Dorman ───────────────────────────────────────────────────────────────
-  { id:7001, brand:"Dorman", name:"Dorman OE-Style Radiator Assembly",         sku:"DR9749",         price:187.99, was:265.00, rating:4.5, reviews:412,   category:"Cooling System",        subcategory:"Radiators",        inStock:true,  description:"Direct-fit aluminum core; exceeds OEM cooling capacity." },
-  { id:7002, brand:"Dorman", name:"Dorman Starter Motor",                      sku:"DR281-6050",     price:124.99, was:174.99, rating:4.5, reviews:742,   category:"Electrical & Lighting", subcategory:"Starting System",  inStock:true,  description:"100% quality tested; OE-matched connector and mounting." },
-  { id:7003, brand:"Dorman", name:"Dorman Window Regulator with Motor",        sku:"DR741-556",      price:94.99,  was:134.99, rating:4.5, reviews:762,   category:"Body & Exterior",       subcategory:"Window Parts",     inStock:true,  description:"One-piece assembly eliminates the hassle of separate parts." },
-  { id:7004, brand:"Dorman", name:"Dorman Transmission Pan with Gasket",       sku:"DR265-820",      price:67.99,  was:94.99,  rating:4.5, reviews:634,   category:"Transmission",          subcategory:"Trans Pans",       inStock:true,  description:"Stamped steel pan; reusable cork gasket included." },
-  { id:7005, brand:"Dorman", name:"Dorman Hood Strut Lift Support (2-Pack)",   sku:"DR748-108",      price:34.99,  was:49.99,  rating:4.7, reviews:2341,  category:"Body & Exterior",       subcategory:"Hood Parts",       inStock:true,  description:"Nitrogen-charged struts; pair sold together." },
-  { id:7006, brand:"Dorman", name:"Dorman Exhaust Manifold",                   sku:"DR674-080",      price:124.99, was:174.99, rating:4.4, reviews:543,   category:"Exhaust System",        subcategory:"Manifolds",        inStock:true,  description:"Engineered with heat-resistant alloy for long-term reliability." },
-  { id:7007, brand:"Dorman", name:"Dorman Vapor Canister Purge Valve",         sku:"DR911-093",      price:22.99,  was:34.99,  rating:4.6, reviews:1123,  category:"Fuel System",           subcategory:"Emission Control",  inStock:true,  description:"Eliminates check-engine codes P0443, P0446, P0455." },
+      products.push({
+        id,
+        name: tpl.namePattern.replace("{brand}", brand),
+        brand,
+        manufacturer: MANUFACTURER_NAMES[brand],
+        sku,
+        oemNumber,
+        interchangeNumbers,
+        price,
+        was,
+        rating,
+        reviews,
+        category: tpl.category,
+        partType: tpl.partType,
+        inStock: seed % 23 !== 0, // ~96% in stock
+        fitment: generateFitment(seed + id),
+      });
+    });
+  });
 
-  // ── ACDelco ───────────────────────────────────────────────────────────────
-  { id:8001, brand:"ACDelco", name:"ACDelco Professional Oil Filter",          sku:"PF63",           price:8.99,   was:14.99,  rating:4.7, reviews:5412,  category:"Filters & Maintenance", subcategory:"Oil Filters",      inStock:true,  description:"GM OE replacement; dual-flow anti-drain valve." },
-  { id:8002, brand:"ACDelco", name:"ACDelco OE Serpentine Belt",               sku:"AD6K945",        price:24.99,  was:36.99,  rating:4.7, reviews:2134,  category:"Engine Parts",          subcategory:"Belts",            inStock:true,  description:"OEM GM part; EPDM rubber for 100,000-mile durability." },
-  { id:8003, brand:"ACDelco", name:"ACDelco Brake Hose",                       sku:"AD18J580",       price:18.99,  was:28.99,  rating:4.6, reviews:1204,  category:"Brake System",          subcategory:"Brake Hoses",      inStock:true,  description:"OE GM material and end fittings; pressure tested." },
-  { id:8004, brand:"ACDelco", name:"ACDelco ABS Wheel Speed Sensor",           sku:"AD-45905409",    price:54.99,  was:79.99,  rating:4.6, reviews:892,   category:"Electrical & Lighting", subcategory:"Sensors",          inStock:true,  description:"OE-matched hall-effect sensor; pigtail included." },
-  { id:8005, brand:"ACDelco", name:"ACDelco Advantage Brake Drum",             sku:"AD18B2503A",     price:44.99,  was:64.99,  rating:4.5, reviews:634,   category:"Brake System",          subcategory:"Brake Drums",      inStock:true,  description:"Balanced to reduce vibration; ready-to-install." },
-  { id:8006, brand:"ACDelco", name:"ACDelco Complete Transmission Overhaul Kit",sku:"AD29541266",   price:189.99, was:259.99, rating:4.6, reviews:219,   category:"Transmission",          subcategory:"Rebuild Kits",     inStock:true,  description:"Includes friction plates, steels, and seals for a full rebuild." },
+  return products;
+}
 
-  // ── KYB ──────────────────────────────────────────────────────────────────
-  { id:9001, brand:"KYB", name:"KYB Gas-a-Just Monotube Strut Assembly",      sku:"KYB339274",       price:134.99, was:184.99, rating:4.7, reviews:1102,  category:"Suspension & Steering", subcategory:"Struts",           inStock:true,  description:"High-pressure monotube design for improved vehicle control." },
-  { id:9002, brand:"KYB", name:"KYB Excel-G Strut Mount",                     sku:"KYB-SM5763",      price:44.99,  was:64.99,  rating:4.6, reviews:532,   category:"Suspension & Steering", subcategory:"Strut Mounts",     inStock:true,  description:"OE-matched rubber isolator; bearing plate included." },
-  { id:9003, brand:"KYB", name:"KYB Strut-Plus Complete Assembly – Front",    sku:"KYB-SP400040",    price:174.99, was:239.99, rating:4.8, reviews:891,   category:"Suspension & Steering", subcategory:"Struts",           inStock:true,  description:"Ready-to-install complete unit; no spring compressor needed." },
-  { id:9004, brand:"KYB", name:"KYB Gas Shock – Rear (Each)",                 sku:"KYB-344369",      price:48.99,  was:69.99,  rating:4.7, reviews:1654,  category:"Suspension & Steering", subcategory:"Shocks",           inStock:true,  description:"OE-performance gas-charged monotube shock absorber." },
+export const ALL_PRODUCTS: Product[] = generateProducts();
 
-  // ── Bilstein ─────────────────────────────────────────────────────────────
-  { id:10001, brand:"Bilstein", name:"Bilstein B8 Performance Shock",         sku:"BIL24-186728",    price:189.99, was:239.99, rating:4.9, reviews:672,   category:"Suspension & Steering", subcategory:"Shocks",           inStock:true,  description:"Velocity-sensitive monotube for sport-tuned handling." },
-  { id:10002, brand:"Bilstein", name:"Bilstein B6 HD Shock Absorber",         sku:"BIL33-187253",    price:139.99, was:189.99, rating:4.8, reviews:892,   category:"Suspension & Steering", subcategory:"Shocks",           inStock:true,  description:"Heavy-duty monotube for improved control with towing loads." },
-  { id:10003, brand:"Bilstein", name:"Bilstein B4 OE Replacement Strut",      sku:"BIL22-141474",    price:114.99, was:159.99, rating:4.7, reviews:1231,  category:"Suspension & Steering", subcategory:"Struts",           inStock:true,  description:"OE ride quality restored; direct bolt-on replacement." },
-  { id:10004, brand:"Bilstein", name:"Bilstein B8 5100 Ride Height Adjustable Shock", sku:"BIL33-185768", price:214.99, was:284.99, rating:4.8, reviews:541, category:"Suspension & Steering", subcategory:"Shocks",      inStock:true,  description:"Adjustable ride height for leveling or mild lift applications." },
-];
+// ─── Derived lookups ────────────────────────────────────────────────────────────
 
-// ─── Derived lookups ──────────────────────────────────────────────────────────
+export const PRODUCTS_BY_CATEGORY: Record<string, Product[]> = {};
+for (const p of ALL_PRODUCTS) {
+  (PRODUCTS_BY_CATEGORY[p.category] ??= []).push(p);
+}
 
-/** All unique brand slugs (lowercase) */
-export const BRAND_SLUGS: string[] = [
-  ...new Set(ALL_PRODUCTS.map((p) => p.brand.toLowerCase().replace(/\s+/g, "-"))),
-];
-
-/** Map brand slug → display name */
-export const BRAND_DISPLAY_NAMES: Record<string, string> = Object.fromEntries(
-  ALL_PRODUCTS.map((p) => [
-    p.brand.toLowerCase().replace(/\s+/g, "-"),
-    p.brand,
-  ])
-);
-
-/** Products keyed by brand slug */
 export const PRODUCTS_BY_BRAND: Record<string, Product[]> = {};
 for (const p of ALL_PRODUCTS) {
-  const slug = p.brand.toLowerCase().replace(/\s+/g, "-");
-  if (!PRODUCTS_BY_BRAND[slug]) PRODUCTS_BY_BRAND[slug] = [];
-  PRODUCTS_BY_BRAND[slug].push(p);
+  const slug = brandSlug(p.brand);
+  (PRODUCTS_BY_BRAND[slug] ??= []).push(p);
 }
 
-/** Get products for a given brand slug */
-export function getProductsByBrand(brandSlug: string): Product[] {
-  return PRODUCTS_BY_BRAND[brandSlug] ?? [];
+export const ALL_SUBCATEGORIES: string[] = Array.from(
+  new Set(ALL_PRODUCTS.map((p) => p.partType))
+).sort();
+
+export function getProductById(id: number): Product | undefined {
+  return ALL_PRODUCTS.find((p) => p.id === id);
 }
 
-/** All products as a flat array */
-export const ALL_CATALOG_PRODUCTS: Product[] = ALL_PRODUCTS;
+export function getProductsByCategory(category: string): Product[] {
+  return PRODUCTS_BY_CATEGORY[category] ?? [];
+}
+
+export function getProductsByBrand(brandSlugValue: string): Product[] {
+  return PRODUCTS_BY_BRAND[brandSlugValue] ?? [];
+}
+
+export function searchProducts(query: string): Product[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return ALL_PRODUCTS;
+  return ALL_PRODUCTS.filter(
+    (p) =>
+      p.name.toLowerCase().includes(q) ||
+      p.brand.toLowerCase().includes(q) ||
+      p.sku.toLowerCase().includes(q) ||
+      p.oemNumber.toLowerCase().includes(q) ||
+      p.interchangeNumbers.some((n) => n.toLowerCase().includes(q)) ||
+      p.category.toLowerCase().includes(q) ||
+      p.partType.toLowerCase().includes(q)
+  );
+}
+
+export function getRelatedProducts(product: Product, count = 4): Product[] {
+  return ALL_PRODUCTS.filter(
+    (p) => p.id !== product.id && p.category === product.category
+  ).slice(0, count);
+}
+
+export function getFeaturedProducts(count = 8): Product[] {
+  return [...ALL_PRODUCTS].sort((a, b) => b.reviews - a.reviews).slice(0, count);
+}
+
+/** Deterministic low-stock flag — same parts always show "Only X left" rather than flicker. */
+export function isLowStock(product: Product): boolean {
+  return product.inStock && product.id % 9 === 0;
+}
+
+/** Deterministic low-stock unit count (3–7) for parts flagged by isLowStock. */
+export function lowStockCount(product: Product): number {
+  return 3 + (product.id % 5);
+}
+
+/** Estimated shipping window — in-stock ships fastest, low-stock still ships same week. */
+export function shippingEstimate(product: Product): string {
+  if (!product.inStock) return "Special order — 7–10 business days";
+  if (isLowStock(product)) return "Ships in 1–2 business days";
+  return "Ships today if ordered before 3PM EST";
+}

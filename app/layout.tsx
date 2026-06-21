@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     template: "%s | RockAutoTec",
   },
   description:
-    "Shop 150,000+ OEM and aftermarket auto parts at RockAutoTec. Trusted by repair shops, fleets, and mechanics nationwide. Free shipping on orders $75+. Expert fitment guarantee.",
+    "Shop 1,000+ OEM and aftermarket auto parts at RockAutoTec. Trusted by repair shops, fleets, and mechanics nationwide. Free shipping on orders $75+. Expert fitment guarantee.",
   keywords: [
     "auto parts",
     "car parts",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     siteName: "RockAutoTec",
     title: "RockAutoTec — Professional Auto Parts",
     description:
-      "Shop 150,000+ OEM and aftermarket auto parts. Trusted by repair shops and fleets nationwide. Free shipping on orders $75+.",
+      "Shop 1,000+ OEM and aftermarket auto parts. Trusted by repair shops and fleets nationwide. Free shipping on orders $75+.",
     images: [
       {
         url: "/og-image.jpg",
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "RockAutoTec — Professional Auto Parts",
-    description: "Shop 150,000+ OEM and aftermarket auto parts. Free shipping on orders $75+.",
+    description: "Shop 1,000+ OEM and aftermarket auto parts. Free shipping on orders $75+.",
     images: ["/og-image.jpg"],
   },
   robots: {

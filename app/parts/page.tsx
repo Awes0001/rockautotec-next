@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { ChevronRight, Search } from "lucide-react";
-import { CATALOG, CATEGORY_IMAGES, CATEGORY_ICONS, CATEGORY_SLUGS } from "@/components/parts-list";
+import { CATEGORIES, CATEGORY_SLUGS, CATEGORY_ICON_NAMES, getProductsByCategory, ALL_PRODUCTS } from "@/lib/catalog";
+import PartIcon from "@/components/part-icon";
 
 interface Props {
   searchParams: Promise<{ year?: string; make?: string; model?: string }>;
 }
-
-const TOTAL_PARTS = Object.values(CATALOG).flat().length;
 
 export default async function PartsPage({ searchParams }: Props) {
   const { year, make, model } = await searchParams;
@@ -34,7 +33,7 @@ export default async function PartsPage({ searchParams }: Props) {
                 Shop All Categories
               </h1>
               <p className="text-zinc-400 text-sm mt-1.5">
-                Browse our full catalog of {TOTAL_PARTS.toLocaleString()}+ quality auto parts
+                Browse our full catalog of {ALL_PRODUCTS.length.toLocaleString()}+ quality auto parts
               </p>
             </>
           )}
@@ -47,19 +46,20 @@ export default async function PartsPage({ searchParams }: Props) {
         >
           <Search className="h-4 w-4 text-zinc-500 group-hover:text-red-400 transition-colors shrink-0" />
           <span className="text-sm text-zinc-500 group-hover:text-zinc-300 transition-colors">
-            Search for a specific part, brand, or SKU…
+            Search for a specific part, brand, SKU, or OEM number…
           </span>
           <span className="ml-auto text-xs text-zinc-600 shrink-0">Search →</span>
         </Link>
 
         {/* ── Category grid ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {Object.entries(CATALOG).map(([name, parts]) => {
-            const slug = CATEGORY_SLUGS[name] ?? "engine";
+          {CATEGORIES.map((name) => {
+            const slug = CATEGORY_SLUGS[name];
             const params = hasVehicle
               ? `?year=${year}&make=${make}&model=${model}`
               : "";
             const href = `/category/${slug}${params}`;
+            const count = getProductsByCategory(name).length;
 
             return (
               <Link
@@ -67,27 +67,19 @@ export default async function PartsPage({ searchParams }: Props) {
                 href={href}
                 className="group relative rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-red-600/50 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-950/30"
               >
-                {/* Image */}
-                <div className="relative h-24 sm:h-28 bg-zinc-800 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={CATEGORY_IMAGES[name]}
-                    alt={name}
-                    className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity duration-300"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/40 to-transparent" />
-                  <span className="absolute top-2 right-2 text-xl sm:text-2xl">
-                    {CATEGORY_ICONS[name] ?? "🔧"}
-                  </span>
-                </div>
+                <PartIcon
+                  category={name}
+                  iconName={CATEGORY_ICON_NAMES[name]}
+                  className="h-24 sm:h-28"
+                  iconClassName="h-9 w-9 group-hover:scale-110 transition-transform duration-200"
+                />
 
                 {/* Label */}
                 <div className="p-3 pr-7">
                   <p className="text-xs sm:text-sm font-semibold text-white group-hover:text-red-400 transition-colors leading-tight">
                     {name}
                   </p>
-                  <p className="text-[11px] text-zinc-500 mt-0.5">{parts.length} parts</p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">{count} parts</p>
                 </div>
 
                 <ChevronRight className="absolute right-2.5 bottom-3.5 h-3.5 w-3.5 text-zinc-700 group-hover:text-red-500 transition-colors" />

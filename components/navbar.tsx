@@ -10,22 +10,19 @@ import {
 } from "lucide-react";
 import { useCart } from "@/components/cart-context";
 import { useAuth } from "@/components/auth-context";
-import { ALL_PARTS } from "@/components/parts-list";
+import {
+  CATEGORIES, CATEGORY_SLUGS, CATEGORY_ICON_NAMES,
+  BRANDS, brandSlug, searchProducts,
+} from "@/lib/catalog";
+import PartIcon from "@/components/part-icon";
 
 // ── Static data ────────────────────────────────────────────────────────────
 
-const CATEGORIES = [
-  { label: "Engine Parts",          slug: "engine",       icon: "⚙️" },
-  { label: "Brake System",          slug: "brakes",       icon: "🛑" },
-  { label: "Suspension & Steering", slug: "suspension",   icon: "🔩" },
-  { label: "Cooling System",        slug: "cooling",      icon: "❄️" },
-  { label: "Electrical & Lighting", slug: "electrical",   icon: "⚡" },
-  { label: "Fuel System",           slug: "fuel",         icon: "⛽" },
-  { label: "Transmission",          slug: "transmission", icon: "🔄" },
-  { label: "Exhaust System",        slug: "exhaust",      icon: "💨" },
-  { label: "Filters & Maintenance", slug: "filters",      icon: "🔧" },
-  { label: "Body & Exterior",       slug: "body",         icon: "🚗" },
-];
+const NAV_CATEGORIES = CATEGORIES.map((label) => ({
+  label,
+  slug: CATEGORY_SLUGS[label],
+  iconName: CATEGORY_ICON_NAMES[label],
+}));
 
 const MAKES = [
   "Ford", "Chevrolet", "GMC", "Ram", "Dodge", "Jeep",
@@ -35,40 +32,14 @@ const MAKES = [
   "Volvo", "Tesla",
 ];
 
-const BRANDS = [
-  { name: "Bosch",       slug: "bosch"       },
-  { name: "ACDelco",     slug: "acdelco"     },
-  { name: "Gates",       slug: "gates"       },
-  { name: "Monroe",      slug: "monroe"      },
-  { name: "Moog",        slug: "moog"        },
-  { name: "NGK",         slug: "ngk"         },
-  { name: "Dorman",      slug: "dorman"      },
-  { name: "Raybestos",   slug: "raybestos"   },
-  { name: "Delphi",      slug: "delphi"      },
-  { name: "Fel-Pro",     slug: "fel-pro"     },
-  { name: "Bilstein",    slug: "bilstein"    },
-  { name: "StopTech",    slug: "stoptech"    },
-  { name: "K&N",         slug: "kn"          },
-  { name: "MagnaFlow",   slug: "magnaflow"   },
-  { name: "Optima",      slug: "optima"      },
-  { name: "Denso",       slug: "denso"       },
-];
+const NAV_BRANDS = BRANDS.map((name) => ({ name, slug: brandSlug(name) }));
 
 type MegaPanel = "make" | "category" | "brand" | null;
 
 // ── Search suggestion hook ─────────────────────────────────────────────────
 
 function useLiveSearch(query: string) {
-  return query.trim().length >= 2
-    ? ALL_PARTS
-        .filter(
-          (p) =>
-            p.name.toLowerCase().includes(query.toLowerCase()) ||
-            p.brand.toLowerCase().includes(query.toLowerCase()) ||
-            p.sku.toLowerCase().includes(query.toLowerCase())
-        )
-        .slice(0, 6)
-    : [];
+  return query.trim().length >= 2 ? searchProducts(query).slice(0, 6) : [];
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -185,7 +156,7 @@ export default function Navbar() {
                     value={searchQ}
                     onChange={(e) => { setSearchQ(e.target.value); setSearchOpen(true); }}
                     onFocus={() => setSearchOpen(true)}
-                    placeholder="Search part name, SKU, or part number…"
+                    placeholder="Search part name, SKU, or OEM number…"
                     className="w-full pl-11 pr-4 py-2.5 rounded-l-xl border border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
                     aria-label="Search parts"
                   />
@@ -212,16 +183,21 @@ export default function Navbar() {
                         <button
                           key={part.id}
                           onClick={() => {
-                            router.push(`/search?q=${encodeURIComponent(part.name)}`);
+                            router.push(`/part/${part.id}`);
                             setSearchOpen(false);
                             setSearchQ("");
                           }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-800 transition-colors text-left"
                         >
-                          <span className="text-base shrink-0">🔧</span>
+                          <PartIcon
+                            category={part.category}
+                            iconName={CATEGORY_ICON_NAMES[part.category]}
+                            className="h-8 w-8 rounded-md shrink-0"
+                            iconClassName="h-4 w-4"
+                          />
                           <div className="min-w-0">
                             <p className="text-sm text-white truncate">{part.name}</p>
-                            <p className="text-xs text-zinc-500">{part.brand} · {part.sku}</p>
+                            <p className="text-xs text-zinc-500">{part.brand} · OEM {part.oemNumber}</p>
                           </div>
                           <span className="ml-auto text-sm font-semibold text-white shrink-0">
                             ${part.price.toFixed(2)}
@@ -396,14 +372,19 @@ export default function Navbar() {
                   onMouseLeave={closePanel}
                   className="absolute top-full left-0 z-50 w-72 rounded-b-xl border border-t-0 border-zinc-700 bg-zinc-900 shadow-2xl shadow-black/60 py-2"
                 >
-                  {CATEGORIES.map((cat) => (
+                  {NAV_CATEGORIES.map((cat) => (
                     <Link
                       key={cat.slug}
                       href={`/category/${cat.slug}`}
                       onClick={() => setMegaPanel(null)}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
                     >
-                      <span className="text-base w-6 text-center shrink-0">{cat.icon}</span>
+                      <PartIcon
+                        category={cat.label}
+                        iconName={cat.iconName}
+                        className="h-7 w-7 rounded-md shrink-0"
+                        iconClassName="h-3.5 w-3.5"
+                      />
                       {cat.label}
                       <ChevronRight className="ml-auto h-3.5 w-3.5 text-zinc-600" />
                     </Link>
@@ -443,7 +424,7 @@ export default function Navbar() {
                   onMouseLeave={closePanel}
                   className="absolute top-full left-0 z-50 w-64 rounded-b-xl border border-t-0 border-zinc-700 bg-zinc-900 shadow-2xl shadow-black/60 py-2"
                 >
-                  {BRANDS.map((brand) => (
+                  {NAV_BRANDS.map((brand) => (
                     <Link
                       key={brand.slug}
                       href={`/brand/${brand.slug}`}
@@ -514,7 +495,7 @@ export default function Navbar() {
                   type="text"
                   value={searchQ}
                   onChange={(e) => setSearchQ(e.target.value)}
-                  placeholder="Search parts, SKUs…"
+                  placeholder="Search parts, SKUs, OEM numbers…"
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 text-sm focus:outline-none focus:border-red-500"
                 />
               </div>
@@ -545,14 +526,19 @@ export default function Navbar() {
             )}
 
             {/* Categories */}
-            {CATEGORIES.map((cat) => (
+            {NAV_CATEGORIES.map((cat) => (
               <Link
                 key={cat.slug}
                 href={`/category/${cat.slug}`}
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
               >
-                <span className="text-base w-6 text-center">{cat.icon}</span>
+                <PartIcon
+                  category={cat.label}
+                  iconName={cat.iconName}
+                  className="h-7 w-7 rounded-md shrink-0"
+                  iconClassName="h-3.5 w-3.5"
+                />
                 {cat.label}
               </Link>
             ))}

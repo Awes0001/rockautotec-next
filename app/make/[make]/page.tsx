@@ -1,21 +1,11 @@
 import Link from "next/link";
 import { Car, ChevronRight, ArrowLeft, Search } from "lucide-react";
 import { MAKES_BY_SLUG } from "@/lib/makes";
+import { CATEGORIES, CATEGORY_SLUGS } from "@/lib/catalog";
 
 // ── Category quick-links ──────────────────────────────────────────────────────
 
-const SHOP_CATEGORIES = [
-  { label: "Engine Parts",          slug: "engine"       },
-  { label: "Brake System",          slug: "brakes"       },
-  { label: "Suspension & Steering", slug: "suspension"   },
-  { label: "Cooling System",        slug: "cooling"      },
-  { label: "Electrical & Lighting", slug: "electrical"   },
-  { label: "Fuel System",           slug: "fuel"         },
-  { label: "Transmission",          slug: "transmission" },
-  { label: "Exhaust System",        slug: "exhaust"      },
-  { label: "Filters & Maintenance", slug: "filters"      },
-  { label: "Body & Exterior",       slug: "body"         },
-];
+const SHOP_CATEGORIES = CATEGORIES.map((label) => ({ label, slug: CATEGORY_SLUGS[label] }));
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 

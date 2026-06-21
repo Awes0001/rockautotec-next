@@ -8,10 +8,11 @@ import {
   ChevronDown, X, Check, AlertTriangle,
 } from "lucide-react";
 import {
-  CATALOG, SLUG_TO_CATEGORY, CATEGORY_IMAGES, CATEGORY_ICONS,
-  getPartImage, isLowStock, lowStockCount, getPartType, Part,
-} from "@/components/parts-list";
+  SLUG_TO_CATEGORY, CATEGORY_ICON_NAMES, getProductsByCategory,
+  isLowStock, lowStockCount, shippingEstimate, type Product,
+} from "@/lib/catalog";
 import { useCart } from "@/components/cart-context";
+import PartIcon from "@/components/part-icon";
 
 type SortKey = "default" | "price-asc" | "price-desc" | "rating" | "reviews";
 
@@ -36,7 +37,7 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-function StockBadge({ part }: { part: Part }) {
+function StockBadge({ part }: { part: Product }) {
   if (!part.inStock) {
     return <span className="text-[10px] font-bold shrink-0 text-red-500">Out of Stock</span>;
   }
@@ -69,7 +70,7 @@ export default function CategorySlugPage() {
   const [minRating, setMinRating]         = useState<number | null>(null);
 
   const categoryName = SLUG_TO_CATEGORY[slug ?? ""] ?? "";
-  const rawParts: Part[] = CATALOG[categoryName] ?? [];
+  const rawParts: Product[] = categoryName ? getProductsByCategory(categoryName) : [];
 
   const brands = useMemo(
     () => Array.from(new Set(rawParts.map((p) => p.brand))).sort(),
@@ -77,7 +78,7 @@ export default function CategorySlugPage() {
   );
 
   const partTypes = useMemo(
-    () => Array.from(new Set(rawParts.map((p) => getPartType(p)))).sort(),
+    () => Array.from(new Set(rawParts.map((p) => p.partType))).sort(),
     [rawParts]
   );
 
@@ -90,7 +91,7 @@ export default function CategorySlugPage() {
       filtered = filtered.filter((p) => selectedBrands.includes(p.brand));
     }
     if (selectedTypes.length > 0) {
-      filtered = filtered.filter((p) => selectedTypes.includes(getPartType(p)));
+      filtered = filtered.filter((p) => selectedTypes.includes(p.partType));
     }
     if (priceRange) {
       filtered = filtered.filter((p) => p.price >= priceRange.min && p.price <= priceRange.max);
@@ -110,8 +111,7 @@ export default function CategorySlugPage() {
   }, [rawParts, selectedBrands, selectedTypes, priceRange, minRating, sortBy]);
 
   const hasVehicle = Boolean(year && make && model);
-  const backHref   = hasVehicle ? `/parts?year=${year}&make=${make}&model=${model}` : "/parts";
-  const partLinkQS = hasVehicle ? `?year=${encodeURIComponent(year)}&make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}` : "";
+  const backHref   = hasVehicle ? `/search?year=${year}&make=${make}&model=${model}` : "/parts";
 
   const sortLabels: Record<SortKey, string> = {
     default:      "Best Match",
@@ -121,7 +121,7 @@ export default function CategorySlugPage() {
     reviews:      "Most Reviewed",
   };
 
-  function handleAdd(part: Part) {
+  function handleAdd(part: Product) {
     addToCart({ part: part.name, year, make, model, price: part.price });
     setAddedId(part.id);
     setTimeout(() => setAddedId(null), 1500);
@@ -161,22 +161,22 @@ export default function CategorySlugPage() {
     );
   }
 
-  const savings = (p: Part) => Math.round(((p.was - p.price) / p.was) * 100);
+  const savings = (p: Product) => Math.round(((p.was - p.price) / p.was) * 100);
 
   return (
     <div className="min-h-screen bg-zinc-950">
 
       {/* ── Category hero ───────────────────────────────────────────────── */}
-      <div className="relative h-36 sm:h-48 bg-zinc-800 overflow-hidden">
-        <img
-          src={CATEGORY_IMAGES[categoryName]}
-          alt={categoryName}
-          className="w-full h-full object-cover opacity-40"
+      <div className="relative h-32 sm:h-40 overflow-hidden">
+        <PartIcon
+          category={categoryName}
+          iconName={CATEGORY_ICON_NAMES[categoryName]}
+          className="absolute inset-0 w-full h-full"
+          iconClassName="h-16 w-16 opacity-40"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/70 to-transparent" />
         <div className="absolute inset-0 flex items-center px-4 sm:px-8 lg:px-12">
           <div>
-            <span className="text-3xl sm:text-4xl mb-2 block">{CATEGORY_ICONS[categoryName]}</span>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
               {categoryName}
             </h1>
@@ -192,13 +192,9 @@ export default function CategorySlugPage() {
         {/* ── Toolbar ───────────────────────────────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-4">
-            <Link
-              href={backHref}
-              className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
-            >
+            <Link href={backHref} className="inline-flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors">
               <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Back to Categories</span>
-              <span className="sm:hidden">Back</span>
+              <span className="hidden sm:inline">Back</span>
             </Link>
             <span className="text-zinc-700">|</span>
             <p className="text-sm text-zinc-400">
@@ -207,7 +203,6 @@ export default function CategorySlugPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Mobile filter toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="lg:hidden flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-4 py-2.5 text-sm font-medium transition-colors"
@@ -221,7 +216,6 @@ export default function CategorySlugPage() {
               )}
             </button>
 
-            {/* Sort dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowSort(!showSort)}
@@ -242,9 +236,7 @@ export default function CategorySlugPage() {
                         key={key}
                         onClick={() => { setSortBy(key); setShowSort(false); }}
                         className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                          sortBy === key
-                            ? "bg-red-600 text-white font-semibold"
-                            : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
+                          sortBy === key ? "bg-red-600 text-white font-semibold" : "text-zinc-300 hover:bg-zinc-800 hover:text-white"
                         }`}
                       >
                         {label}
@@ -257,40 +249,25 @@ export default function CategorySlugPage() {
           </div>
         </div>
 
-        {/* ── Active filter pills ─────────────────────────────────────────── */}
         {activeFilterCount > 0 && (
           <div className="flex flex-wrap items-center gap-2 mb-5">
             {selectedBrands.map((b) => (
-              <button
-                key={b}
-                onClick={() => toggleBrand(b)}
-                className="flex items-center gap-1.5 rounded-full bg-red-900/30 border border-red-800/50 text-red-300 text-xs px-3 py-1.5 hover:bg-red-900/50 transition-colors"
-              >
+              <button key={b} onClick={() => toggleBrand(b)} className="flex items-center gap-1.5 rounded-full bg-red-900/30 border border-red-800/50 text-red-300 text-xs px-3 py-1.5 hover:bg-red-900/50 transition-colors">
                 {b} <X className="h-3 w-3" />
               </button>
             ))}
             {selectedTypes.map((t) => (
-              <button
-                key={t}
-                onClick={() => toggleType(t)}
-                className="flex items-center gap-1.5 rounded-full bg-red-900/30 border border-red-800/50 text-red-300 text-xs px-3 py-1.5 hover:bg-red-900/50 transition-colors"
-              >
+              <button key={t} onClick={() => toggleType(t)} className="flex items-center gap-1.5 rounded-full bg-red-900/30 border border-red-800/50 text-red-300 text-xs px-3 py-1.5 hover:bg-red-900/50 transition-colors">
                 {t} <X className="h-3 w-3" />
               </button>
             ))}
             {priceRange && (
-              <button
-                onClick={() => setPriceRange(null)}
-                className="flex items-center gap-1.5 rounded-full bg-red-900/30 border border-red-800/50 text-red-300 text-xs px-3 py-1.5 hover:bg-red-900/50 transition-colors"
-              >
+              <button onClick={() => setPriceRange(null)} className="flex items-center gap-1.5 rounded-full bg-red-900/30 border border-red-800/50 text-red-300 text-xs px-3 py-1.5 hover:bg-red-900/50 transition-colors">
                 {priceRange.label} <X className="h-3 w-3" />
               </button>
             )}
             {minRating && (
-              <button
-                onClick={() => setMinRating(null)}
-                className="flex items-center gap-1.5 rounded-full bg-red-900/30 border border-red-800/50 text-red-300 text-xs px-3 py-1.5 hover:bg-red-900/50 transition-colors"
-              >
+              <button onClick={() => setMinRating(null)} className="flex items-center gap-1.5 rounded-full bg-red-900/30 border border-red-800/50 text-red-300 text-xs px-3 py-1.5 hover:bg-red-900/50 transition-colors">
                 {minRating}★ &amp; up <X className="h-3 w-3" />
               </button>
             )}
@@ -300,7 +277,6 @@ export default function CategorySlugPage() {
           </div>
         )}
 
-        {/* ── Free shipping notice ──────────────────────────────────────── */}
         <div className="flex items-center gap-2 rounded-lg border border-emerald-900/50 bg-emerald-950/30 px-4 py-2.5 mb-6 text-sm text-emerald-400">
           <Package className="h-4 w-4 shrink-0" />
           <span>Free shipping on orders over <strong>$75</strong></span>
@@ -310,106 +286,68 @@ export default function CategorySlugPage() {
 
           {/* ── Filter sidebar ────────────────────────────────────────────── */}
           <aside className={`${showFilters ? "block" : "hidden"} lg:block w-full lg:w-60 xl:w-64 shrink-0 space-y-4`}>
-            {/* Brand */}
             <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
               <h3 className="text-sm font-semibold text-white mb-3">Brand</h3>
               <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                 {brands.map((brand) => (
                   <label key={brand} className="flex items-center gap-2.5 cursor-pointer group">
-                    <span
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
-                        selectedBrands.includes(brand)
-                          ? "bg-red-600 border-red-600"
-                          : "border-zinc-600 group-hover:border-zinc-400"
-                      }`}
-                    >
+                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                      selectedBrands.includes(brand) ? "bg-red-600 border-red-600" : "border-zinc-600 group-hover:border-zinc-400"
+                    }`}>
                       {selectedBrands.includes(brand) && <Check className="h-3 w-3 text-white" />}
                     </span>
-                    <input
-                      type="checkbox"
-                      checked={selectedBrands.includes(brand)}
-                      onChange={() => toggleBrand(brand)}
-                      className="sr-only"
-                    />
+                    <input type="checkbox" checked={selectedBrands.includes(brand)} onChange={() => toggleBrand(brand)} className="sr-only" />
                     <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">{brand}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/* Part Type */}
             <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
               <h3 className="text-sm font-semibold text-white mb-3">Part Type</h3>
               <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                 {partTypes.map((type) => (
                   <label key={type} className="flex items-center gap-2.5 cursor-pointer group">
-                    <span
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
-                        selectedTypes.includes(type)
-                          ? "bg-red-600 border-red-600"
-                          : "border-zinc-600 group-hover:border-zinc-400"
-                      }`}
-                    >
+                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                      selectedTypes.includes(type) ? "bg-red-600 border-red-600" : "border-zinc-600 group-hover:border-zinc-400"
+                    }`}>
                       {selectedTypes.includes(type) && <Check className="h-3 w-3 text-white" />}
                     </span>
-                    <input
-                      type="checkbox"
-                      checked={selectedTypes.includes(type)}
-                      onChange={() => toggleType(type)}
-                      className="sr-only"
-                    />
+                    <input type="checkbox" checked={selectedTypes.includes(type)} onChange={() => toggleType(type)} className="sr-only" />
                     <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">{type}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/* Price */}
             <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
               <h3 className="text-sm font-semibold text-white mb-3">Price Range</h3>
               <div className="space-y-2">
                 {PRICE_RANGES.map((range) => (
                   <label key={range.label} className="flex items-center gap-2.5 cursor-pointer group">
-                    <span
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                        priceRange?.label === range.label
-                          ? "border-red-600"
-                          : "border-zinc-600 group-hover:border-zinc-400"
-                      }`}
-                    >
+                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                      priceRange?.label === range.label ? "border-red-600" : "border-zinc-600 group-hover:border-zinc-400"
+                    }`}>
                       {priceRange?.label === range.label && <span className="h-2 w-2 rounded-full bg-red-600" />}
                     </span>
-                    <input
-                      type="radio"
-                      checked={priceRange?.label === range.label}
-                      onChange={() => setPriceRange(priceRange?.label === range.label ? null : range)}
-                      className="sr-only"
-                    />
+                    <input type="radio" checked={priceRange?.label === range.label} onChange={() => setPriceRange(priceRange?.label === range.label ? null : range)} className="sr-only" />
                     <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">{range.label}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/* Rating */}
             <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
               <h3 className="text-sm font-semibold text-white mb-3">Customer Rating</h3>
               <div className="space-y-2">
                 {[4.5, 4, 3].map((r) => (
                   <label key={r} className="flex items-center gap-2.5 cursor-pointer group">
-                    <span
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                        minRating === r ? "border-red-600" : "border-zinc-600 group-hover:border-zinc-400"
-                      }`}
-                    >
+                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                      minRating === r ? "border-red-600" : "border-zinc-600 group-hover:border-zinc-400"
+                    }`}>
                       {minRating === r && <span className="h-2 w-2 rounded-full bg-red-600" />}
                     </span>
-                    <input
-                      type="radio"
-                      checked={minRating === r}
-                      onChange={() => setMinRating(minRating === r ? null : r)}
-                      className="sr-only"
-                    />
+                    <input type="radio" checked={minRating === r} onChange={() => setMinRating(minRating === r ? null : r)} className="sr-only" />
                     <span className="flex items-center gap-1.5 text-sm text-zinc-300 group-hover:text-white transition-colors">
                       <StarRating rating={r} /> &amp; up
                     </span>
@@ -432,17 +370,13 @@ export default function CategorySlugPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {parts.map((part) => (
-                  <div
-                    key={part.id}
-                    className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-zinc-700 hover:shadow-lg hover:shadow-zinc-950/50 transition-all duration-150 flex flex-col"
-                  >
-                    {/* Image */}
-                    <Link href={`/part/${part.id}${partLinkQS}`} className="relative h-36 bg-zinc-800 overflow-hidden block group">
-                      <img
-                        src={getPartImage(part)}
-                        alt={part.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
+                  <div key={part.id} className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-zinc-700 hover:shadow-lg hover:shadow-zinc-950/50 transition-all duration-150 flex flex-col">
+                    <Link href={`/part/${part.id}`} className="relative block">
+                      <PartIcon
+                        category={part.category}
+                        iconName={CATEGORY_ICON_NAMES[part.category]}
+                        className="h-32"
+                        iconClassName="h-9 w-9"
                       />
                       {savings(part) > 0 && (
                         <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">
@@ -451,64 +385,41 @@ export default function CategorySlugPage() {
                       )}
                     </Link>
 
-                    {/* SKU row */}
                     <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-zinc-800 bg-zinc-950/60">
-                      <span className="text-xs font-mono text-zinc-500 truncate">{part.sku}</span>
+                      <span className="text-xs font-mono text-zinc-500 truncate">SKU {part.sku}</span>
                       <StockBadge part={part} />
                     </div>
 
-                    {/* Body */}
                     <div className="p-4 flex-1 flex flex-col">
-                      <Link
-                        href={`/part/${part.id}${partLinkQS}`}
-                        className="text-sm font-semibold text-white hover:text-red-400 leading-snug line-clamp-2 transition-colors mb-0.5"
-                      >
+                      <Link href={`/part/${part.id}`} className="text-sm font-semibold text-white hover:text-red-400 leading-snug line-clamp-2 transition-colors mb-0.5">
                         {part.name}
                       </Link>
-                      <p className="text-xs text-zinc-500 mb-3">{part.brand}</p>
+                      <p className="text-xs text-zinc-500 mb-1">{part.brand}</p>
+                      <p className="text-[11px] text-zinc-600 font-mono mb-3">OEM {part.oemNumber}</p>
 
-                      <div className="flex items-center gap-2 mb-4">
+                      <div className="flex items-center gap-2 mb-2">
                         <StarRating rating={part.rating} />
-                        <span className="text-[11px] text-zinc-500">
-                          {part.rating} ({part.reviews.toLocaleString()})
-                        </span>
+                        <span className="text-[11px] text-zinc-500">{part.rating} ({part.reviews.toLocaleString()})</span>
                       </div>
+                      <p className="text-[11px] text-zinc-500 mb-3">{shippingEstimate(part)}</p>
 
                       <div className="mt-auto flex items-end justify-between gap-3">
                         <div>
                           <div className="flex items-baseline gap-1.5">
-                            <span className="text-xl font-bold text-white">
-                              ${part.price.toFixed(2)}
-                            </span>
-                            <span className="text-xs text-zinc-600 line-through">
-                              ${part.was.toFixed(2)}
-                            </span>
+                            <span className="text-xl font-bold text-white">${part.price.toFixed(2)}</span>
+                            <span className="text-xs text-zinc-600 line-through">${part.was.toFixed(2)}</span>
                           </div>
-                          <span className="inline-block text-[10px] font-bold text-emerald-400 mt-0.5">
-                            Save {savings(part)}%
-                          </span>
+                          <span className="inline-block text-[10px] font-bold text-emerald-400 mt-0.5">Save {savings(part)}%</span>
                         </div>
 
                         <button
                           onClick={() => handleAdd(part)}
                           disabled={!part.inStock}
                           className={`flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors shrink-0 ${
-                            addedId === part.id
-                              ? "bg-emerald-600 text-white"
-                              : part.inStock
-                              ? "bg-red-600 hover:bg-red-500 active:bg-red-700 text-white"
-                              : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+                            addedId === part.id ? "bg-emerald-600 text-white" : part.inStock ? "bg-red-600 hover:bg-red-500 active:bg-red-700 text-white" : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
                           }`}
                         >
-                          {addedId === part.id ? (
-                            "Added!"
-                          ) : (
-                            <>
-                              <ShoppingCart className="h-3.5 w-3.5" />
-                              <span className="hidden sm:inline">Add to Cart</span>
-                              <span className="sm:hidden">Add</span>
-                            </>
-                          )}
+                          {addedId === part.id ? "Added!" : (<><ShoppingCart className="h-3.5 w-3.5" /><span className="hidden sm:inline">Add to Cart</span><span className="sm:hidden">Add</span></>)}
                         </button>
                       </div>
                     </div>
