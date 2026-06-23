@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  Phone, ShoppingCart, Star, Truck, Shield,
+  Phone, ShoppingCart, Star, Truck, Shield, Lock,
   RotateCcw, Headphones, Check, ArrowRight,
   Car, Package, Tag, ScanLine, Loader2, AlertTriangle,
   TrendingUp, Building2, Mail, Facebook, Twitter, Instagram, Youtube,
@@ -409,9 +409,8 @@ export default function HomePage() {
               <Link
                 key={m.slug}
                 href={`/make/${m.slug}`}
-                className="flex flex-col items-center justify-center gap-2 rounded-xl bg-zinc-800 p-4 hover:bg-zinc-700 transition-colors duration-200"
+                className="block rounded-xl bg-zinc-800 p-4 text-center hover:bg-zinc-700 transition-colors duration-200"
               >
-                <Car className="h-4 w-4 text-red-500" />
                 <span className="text-sm font-bold text-white">{m.name}</span>
               </Link>
             ))}
@@ -688,6 +687,20 @@ export default function HomePage() {
                 ))}
               </ul>
             </div>
+          </div>
+        </div>
+
+        {/* Compliance badges */}
+        <div className="border-t border-zinc-800 bg-zinc-950/40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            <span className="flex items-center gap-2 text-xs text-zinc-500">
+              <Shield className="h-4 w-4 text-emerald-500" />
+              PCI DSS Compliant Checkout
+            </span>
+            <span className="flex items-center gap-2 text-xs text-zinc-500">
+              <Lock className="h-4 w-4 text-emerald-500" />
+              256-bit SSL Encryption
+            </span>
           </div>
         </div>
 
