@@ -66,8 +66,8 @@ function ProductCard({ part }: { part: Product }) {
         <PartIcon
           category={part.category}
           iconName={CATEGORY_ICON_NAMES[part.category]}
-          className="h-36 sm:h-40 w-full"
-          iconClassName="h-12 w-12 group-hover:scale-110 transition-transform duration-200"
+          className="h-20 w-full"
+          iconClassName="h-7 w-7 group-hover:scale-110 transition-transform duration-200"
         />
         {discount > 0 && (
           <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow">
@@ -409,10 +409,12 @@ export default function HomePage() {
               <Link
                 key={m.slug}
                 href={`/make/${m.slug}`}
-                className="flex flex-col items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950 p-4 hover:border-red-600 hover:bg-zinc-800 transition-all duration-200"
+                className="group flex flex-col items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950 p-4 hover:border-red-600 hover:bg-zinc-800 transition-all duration-200"
               >
-                <span className="text-2xl">{m.logo ?? "🚗"}</span>
-                <span className="text-xs font-semibold text-zinc-300">{m.name}</span>
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-600/10 text-red-500 group-hover:bg-red-600 group-hover:text-white transition-all duration-200">
+                  <Car className="h-4 w-4" />
+                </span>
+                <span className="text-xs font-bold text-zinc-200 group-hover:text-white transition-colors">{m.name}</span>
               </Link>
             ))}
           </div>
