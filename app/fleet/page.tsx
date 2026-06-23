@@ -82,7 +82,7 @@ export default function FleetPage() {
           </div>
           <p className="text-lg text-zinc-300 max-w-2xl leading-relaxed">
             Purpose-built for repair shops, dealerships, municipalities, and fleet operators.
-            Volume pricing, Net-30 terms, dedicated support, and a catalog of 1,000+ OEM and aftermarket parts.
+            Volume pricing, Net-30 terms, dedicated support, and a catalog of 1,500+ OEM and aftermarket parts.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-4">
             <Link
@@ -216,7 +216,7 @@ export default function FleetPage() {
 
         {/* What we stock */}
         <section>
-          <h2 className="text-2xl font-bold text-white mb-4">1,000+ Parts In Stock</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">1,500+ Parts In Stock</h2>
           <p className="text-zinc-400 mb-6 max-w-2xl">
             From OEM-grade engine components to lighting and body parts — our catalog spans every major vehicle system across
             domestic, import, and light-duty commercial vehicles.

@@ -1,23 +1,30 @@
 import {
   Disc, Gauge, Settings, Thermometer, Zap, Fuel, Flame, Wind, Lightbulb, Car,
+  CircleDot, Rocket, Truck, Snowflake, Cog,
   type LucideIcon,
 } from "lucide-react";
 
 const ICONS: Record<string, LucideIcon> = {
   Disc, Gauge, Settings, Thermometer, Zap, Fuel, Flame, Wind, Lightbulb, Car,
+  CircleDot, Rocket, Truck, Snowflake, Cog,
 };
 
 const GRADIENTS: Record<string, string> = {
-  Brakes:       "from-red-950 to-zinc-900",
-  Suspension:   "from-zinc-800 to-zinc-900",
-  Engine:       "from-orange-950 to-zinc-900",
-  Cooling:      "from-blue-950 to-zinc-900",
-  Electrical:   "from-amber-950 to-zinc-900",
-  "Fuel System":"from-emerald-950 to-zinc-900",
-  Ignition:     "from-red-950 to-zinc-900",
-  Exhaust:      "from-zinc-700 to-zinc-900",
-  Lighting:     "from-yellow-950 to-zinc-900",
-  "Body Parts": "from-indigo-950 to-zinc-900",
+  Brakes:             "from-red-950 to-zinc-900",
+  Suspension:         "from-zinc-800 to-zinc-900",
+  Engine:             "from-orange-950 to-zinc-900",
+  Cooling:            "from-blue-950 to-zinc-900",
+  Electrical:         "from-amber-950 to-zinc-900",
+  "Fuel System":      "from-emerald-950 to-zinc-900",
+  Ignition:           "from-red-950 to-zinc-900",
+  Exhaust:            "from-zinc-700 to-zinc-900",
+  Lighting:           "from-yellow-950 to-zinc-900",
+  "Body Parts":       "from-indigo-950 to-zinc-900",
+  "Tires & Wheels":   "from-slate-800 to-zinc-900",
+  Performance:        "from-rose-950 to-zinc-900",
+  "Towing & Hauling": "from-stone-800 to-zinc-900",
+  "Climate Control":  "from-cyan-950 to-zinc-900",
+  Drivetrain:         "from-purple-950 to-zinc-900",
 };
 
 /**

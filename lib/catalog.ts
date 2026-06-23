@@ -4,7 +4,7 @@
  * Products are generated deterministically from a fixed set of real part-type
  * templates × real brands × real vehicle fitment combinations — not random,
  * not hand-typed lorem data. Re-running this module always produces the same
- * 1,000-product catalog.
+ * 1,500-product catalog (150 part-type templates × 10 brands).
  */
 
 import { MAKES } from "@/lib/makes";
@@ -14,6 +14,7 @@ import { MAKES } from "@/lib/makes";
 export const CATEGORIES = [
   "Brakes", "Suspension", "Engine", "Cooling", "Electrical",
   "Fuel System", "Ignition", "Exhaust", "Lighting", "Body Parts",
+  "Tires & Wheels", "Performance", "Towing & Hauling", "Climate Control", "Drivetrain",
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];
@@ -29,6 +30,11 @@ export const CATEGORY_SLUGS: Record<Category, string> = {
   Exhaust: "exhaust",
   Lighting: "lighting",
   "Body Parts": "body-parts",
+  "Tires & Wheels": "tires-wheels",
+  Performance: "performance",
+  "Towing & Hauling": "towing-hauling",
+  "Climate Control": "climate-control",
+  Drivetrain: "drivetrain",
 };
 
 export const SLUG_TO_CATEGORY: Record<string, Category> = Object.fromEntries(
@@ -47,6 +53,11 @@ export const CATEGORY_ICON_NAMES: Record<Category, string> = {
   Exhaust: "Wind",
   Lighting: "Lightbulb",
   "Body Parts": "Car",
+  "Tires & Wheels": "CircleDot",
+  Performance: "Rocket",
+  "Towing & Hauling": "Truck",
+  "Climate Control": "Snowflake",
+  Drivetrain: "Cog",
 };
 
 // ─── Brands ────────────────────────────────────────────────────────────────────
@@ -224,6 +235,66 @@ const TEMPLATES: PartTemplate[] = [
   { category: "Body Parts", partType: "Floor Liners & Mats", namePattern: "{brand} Floor Liner Set (4-Piece)",  priceMin: 64,  priceMax: 149 },
   { category: "Body Parts", partType: "Wiper Blades",   namePattern: "{brand} Wiper Blade Set (2-Pack)",         priceMin: 18,  priceMax: 42  },
   { category: "Body Parts", partType: "Pumps",          namePattern: "{brand} Windshield Washer Pump",           priceMin: 14,  priceMax: 34  },
+
+  // Tires & Wheels
+  { category: "Tires & Wheels", partType: "Tires",            namePattern: "{brand} All-Season Tire (Each)",         priceMin: 89,  priceMax: 249 },
+  { category: "Tires & Wheels", partType: "Tires",            namePattern: "{brand} Performance Tire (Each)",        priceMin: 109, priceMax: 289 },
+  { category: "Tires & Wheels", partType: "Wheels",           namePattern: "{brand} Alloy Wheel Rim (Each)",         priceMin: 149, priceMax: 399 },
+  { category: "Tires & Wheels", partType: "Wheel Hardware",   namePattern: "{brand} Wheel Lug Nut Set (20-Pack)",    priceMin: 18,  priceMax: 42  },
+  { category: "Tires & Wheels", partType: "TPMS",             namePattern: "{brand} Tire Pressure Sensor (TPMS)",    priceMin: 38,  priceMax: 94  },
+  { category: "Tires & Wheels", partType: "Wheel Accessories",namePattern: "{brand} Wheel Hub Cap",                  priceMin: 9,   priceMax: 24  },
+  { category: "Tires & Wheels", partType: "Tires",            namePattern: "{brand} Spare Tire Kit",                 priceMin: 64,  priceMax: 149 },
+  { category: "Tires & Wheels", partType: "Wheel Hardware",   namePattern: "{brand} Wheel Lock Set",                 priceMin: 22,  priceMax: 54  },
+  { category: "Tires & Wheels", partType: "Wheel Accessories",namePattern: "{brand} Tire Valve Stem (4-Pack)",       priceMin: 4,   priceMax: 9   },
+  { category: "Tires & Wheels", partType: "Wheel Accessories",namePattern: "{brand} Wheel Center Cap",               priceMin: 12,  priceMax: 28  },
+
+  // Performance
+  { category: "Performance", partType: "Intake & Exhaust",        namePattern: "{brand} Cold Air Intake System",         priceMin: 124, priceMax: 289 },
+  { category: "Performance", partType: "Intake & Exhaust",        namePattern: "{brand} Cat-Back Performance Exhaust",   priceMin: 349, priceMax: 799 },
+  { category: "Performance", partType: "Brakes",                  namePattern: "{brand} Performance Brake Pad Set – Front", priceMin: 64, priceMax: 179 },
+  { category: "Performance", partType: "Drivetrain Performance",   namePattern: "{brand} Short Throw Shifter",            priceMin: 89,  priceMax: 189 },
+  { category: "Performance", partType: "Suspension Performance",   namePattern: "{brand} Lowering Spring Kit",            priceMin: 199, priceMax: 449 },
+  { category: "Performance", partType: "Suspension Performance",   namePattern: "{brand} Strut Tower Brace",              priceMin: 64,  priceMax: 149 },
+  { category: "Performance", partType: "Electronics",              namePattern: "{brand} Performance Tuner",              priceMin: 199, priceMax: 399 },
+  { category: "Performance", partType: "Engine Performance",       namePattern: "{brand} Underdrive Pulley Kit",          priceMin: 109, priceMax: 249 },
+  { category: "Performance", partType: "Drivetrain Performance",   namePattern: "{brand} Performance Clutch Kit",         priceMin: 249, priceMax: 549 },
+  { category: "Performance", partType: "Engine Performance",       namePattern: "{brand} Turbocharger Upgrade Kit",       priceMin: 899, priceMax: 1899 },
+
+  // Towing & Hauling
+  { category: "Towing & Hauling", partType: "Hitches",            namePattern: "{brand} Trailer Hitch – Class III",      priceMin: 124, priceMax: 249 },
+  { category: "Towing & Hauling", partType: "Wiring & Harnesses", namePattern: "{brand} Trailer Wiring Harness",          priceMin: 38,  priceMax: 94  },
+  { category: "Towing & Hauling", partType: "Hitches",            namePattern: "{brand} Adjustable Ball Mount",          priceMin: 28,  priceMax: 64  },
+  { category: "Towing & Hauling", partType: "Hitches",            namePattern: "{brand} Weight Distribution Hitch Kit",  priceMin: 199, priceMax: 449 },
+  { category: "Towing & Hauling", partType: "Towing Accessories", namePattern: "{brand} Trailer Brake Controller",        priceMin: 89,  priceMax: 199 },
+  { category: "Towing & Hauling", partType: "Bed Accessories",    namePattern: "{brand} Spray-On Bed Liner Kit",          priceMin: 199, priceMax: 449 },
+  { category: "Towing & Hauling", partType: "Bed Accessories",    namePattern: "{brand} Roll-Up Tonneau Cover",           priceMin: 249, priceMax: 549 },
+  { category: "Towing & Hauling", partType: "Towing Accessories", namePattern: "{brand} Hitch-Mount Cargo Carrier",       priceMin: 89,  priceMax: 179 },
+  { category: "Towing & Hauling", partType: "Hitches",            namePattern: "{brand} Trailer Coupler Lock",            priceMin: 18,  priceMax: 38  },
+  { category: "Towing & Hauling", partType: "Mirrors",            namePattern: "{brand} Towing Mirror Pair",              priceMin: 64,  priceMax: 149 },
+
+  // Climate Control
+  { category: "Climate Control", partType: "AC Components",    namePattern: "{brand} AC Compressor",                  priceMin: 149, priceMax: 329 },
+  { category: "Climate Control", partType: "AC Components",    namePattern: "{brand} AC Condenser",                   priceMin: 89,  priceMax: 219 },
+  { category: "Climate Control", partType: "Filters",          namePattern: "{brand} Cabin Air Filter",                priceMin: 12,  priceMax: 28  },
+  { category: "Climate Control", partType: "Heating Components", namePattern: "{brand} Heater Core",                   priceMin: 109, priceMax: 259 },
+  { category: "Climate Control", partType: "AC Components",    namePattern: "{brand} AC Receiver Drier",               priceMin: 28,  priceMax: 64  },
+  { category: "Climate Control", partType: "Blower Motors",    namePattern: "{brand} HVAC Blower Motor",               priceMin: 44,  priceMax: 109 },
+  { category: "Climate Control", partType: "Controls",         namePattern: "{brand} HVAC Control Module",             priceMin: 89,  priceMax: 219 },
+  { category: "Climate Control", partType: "AC Components",    namePattern: "{brand} AC Refrigerant Recharge Kit",     priceMin: 24,  priceMax: 54  },
+  { category: "Climate Control", partType: "AC Components",    namePattern: "{brand} AC Evaporator Core",              priceMin: 124, priceMax: 269 },
+  { category: "Climate Control", partType: "AC Components",    namePattern: "{brand} AC Compressor Clutch",            priceMin: 64,  priceMax: 149 },
+
+  // Drivetrain
+  { category: "Drivetrain", partType: "Axles",        namePattern: "{brand} CV Axle Shaft – Front",            priceMin: 64,  priceMax: 149 },
+  { category: "Drivetrain", partType: "Axles",        namePattern: "{brand} CV Joint Boot Kit",                priceMin: 18,  priceMax: 42  },
+  { category: "Drivetrain", partType: "Differentials",namePattern: "{brand} Rear Differential Assembly",       priceMin: 349, priceMax: 799 },
+  { category: "Drivetrain", partType: "Transfer Case", namePattern: "{brand} Transfer Case Assembly",           priceMin: 449, priceMax: 999 },
+  { category: "Drivetrain", partType: "Drive Shafts", namePattern: "{brand} Front Drive Shaft",                priceMin: 199, priceMax: 429 },
+  { category: "Drivetrain", partType: "Drive Shafts", namePattern: "{brand} U-Joint Kit",                      priceMin: 18,  priceMax: 42  },
+  { category: "Drivetrain", partType: "Fluids",       namePattern: "{brand} Differential Fluid (1qt)",         priceMin: 9,   priceMax: 16  },
+  { category: "Drivetrain", partType: "Bearings",     namePattern: "{brand} 4WD Wheel Hub & Bearing",          priceMin: 64,  priceMax: 159 },
+  { category: "Drivetrain", partType: "Bearings",     namePattern: "{brand} Transmission Output Shaft Seal",    priceMin: 12,  priceMax: 28  },
+  { category: "Drivetrain", partType: "Bearings",     namePattern: "{brand} Axle Bearing & Seal Kit",          priceMin: 38,  priceMax: 84  },
 ];
 
 // ─── Vehicle fitment data ──────────────────────────────────────────────────────

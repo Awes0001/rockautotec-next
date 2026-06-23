@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useCart } from "@/components/cart-context";
+import { getFitmentForSku } from "@/data/fitment";
 import {
   getProductById, getRelatedProducts, CATEGORY_SLUGS, CATEGORY_ICON_NAMES,
   isLowStock, lowStockCount, shippingEstimate, type Product,
@@ -387,44 +388,69 @@ function ProductTabs({ product }: { product: Product }) {
           </div>
         )}
 
-        {tab === "fitment" && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm text-zinc-400 mb-4">
-              <Wrench className="h-4 w-4 text-red-500" />
-              Confirmed fitment for this exact part — verified against our vehicle compatibility database.
-            </div>
-            <div className="overflow-x-auto rounded-xl border border-zinc-800">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-zinc-800 text-left">
-                    {["Year Range", "Make", "Model", "Engine"].map((h) => (
-                      <th key={h} className="py-2.5 px-4 text-xs font-bold text-zinc-400 uppercase tracking-wider whitespace-nowrap">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800">
-                  {product.fitment.map((v, i) => (
-                    <tr key={i} className="hover:bg-zinc-800/40 transition-colors">
-                      <td className="py-3 px-4 text-zinc-200 font-medium whitespace-nowrap">{v.yearStart}–{v.yearEnd}</td>
-                      <td className="py-3 px-4 text-zinc-200">{v.make}</td>
-                      <td className="py-3 px-4 text-zinc-200">{v.model}</td>
-                      <td className="py-3 px-4 text-zinc-400 font-mono text-xs">{v.engine}</td>
+        {tab === "fitment" && (() => {
+          const curated = getFitmentForSku(product.sku);
+          const usingCurated = curated.length > 0;
+          const rows = usingCurated
+            ? curated.map((f) => ({
+                yearRange: `${f.year_start}–${f.year_end}`,
+                make: f.make,
+                model: f.model,
+                engine: f.engine ?? "—",
+                notes: f.notes ?? "",
+              }))
+            : product.fitment.map((f) => ({
+                yearRange: `${f.yearStart}–${f.yearEnd}`,
+                make: f.make,
+                model: f.model,
+                engine: f.engine,
+                notes: "",
+              }));
+
+          return (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm text-zinc-400 mb-4">
+                <Wrench className="h-4 w-4 text-red-500" />
+                {usingCurated
+                  ? "Verified by our fitment team — exact engine and install notes confirmed for this part."
+                  : "Confirmed fitment for this exact part — generated against our vehicle compatibility database."}
+              </div>
+              <div className="overflow-x-auto rounded-xl border border-zinc-800">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-zinc-800 text-left">
+                      {["Year Range", "Make", "Model", "Engine", ...(usingCurated ? ["Notes"] : [])].map((h) => (
+                        <th key={h} className="py-2.5 px-4 text-xs font-bold text-zinc-400 uppercase tracking-wider whitespace-nowrap">
+                          {h}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800">
+                    {rows.map((v, i) => (
+                      <tr key={i} className="hover:bg-zinc-800/40 transition-colors">
+                        <td className="py-3 px-4 text-zinc-200 font-medium whitespace-nowrap">{v.yearRange}</td>
+                        <td className="py-3 px-4 text-zinc-200">{v.make}</td>
+                        <td className="py-3 px-4 text-zinc-200">{v.model}</td>
+                        <td className="py-3 px-4 text-zinc-400 font-mono text-xs">{v.engine}</td>
+                        {usingCurated && (
+                          <td className="py-3 px-4 text-zinc-500 text-xs max-w-xs">{v.notes}</td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-zinc-500">
+                Don&apos;t see your exact vehicle?{" "}
+                <Link href="/fitment" className="text-red-400 hover:text-red-300 underline underline-offset-2">
+                  Use our fitment verification tool
+                </Link>{" "}
+                or call <span className="text-zinc-300">1-800-762-5832</span>.
+              </p>
             </div>
-            <p className="text-xs text-zinc-500">
-              Don&apos;t see your exact vehicle?{" "}
-              <Link href="/fitment" className="text-red-400 hover:text-red-300 underline underline-offset-2">
-                Use our fitment verification tool
-              </Link>{" "}
-              or call <span className="text-zinc-300">1-800-762-5832</span>.
-            </p>
-          </div>
-        )}
+          );
+        })()}
 
         {tab === "warranty" && (
           <div className="space-y-4 max-w-2xl">

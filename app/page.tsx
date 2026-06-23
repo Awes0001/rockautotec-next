@@ -3,8 +3,8 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  Search, Phone, ShoppingCart, Star, Truck, Shield,
-  RotateCcw, Headphones, ChevronDown, Check, ArrowRight,
+  Phone, ShoppingCart, Star, Truck, Shield,
+  RotateCcw, Headphones, Check, ArrowRight,
   Car, Package, Tag, ScanLine, Loader2, AlertTriangle,
   TrendingUp, Building2, Mail, Facebook, Twitter, Instagram, Youtube,
   Clock, CreditCard,
@@ -12,20 +12,13 @@ import {
 import { useCart } from "@/components/cart-context";
 import {
   ALL_PRODUCTS, CATEGORIES, CATEGORY_SLUGS, CATEGORY_ICON_NAMES,
-  BRANDS, brandSlug, ENGINES, isLowStock, lowStockCount, shippingEstimate,
+  BRANDS, brandSlug, isLowStock, lowStockCount, shippingEstimate,
   getFeaturedProducts, getProductsByCategory,
   type Product,
 } from "@/lib/catalog";
 import { MAKES } from "@/lib/makes";
 import PartIcon from "@/components/part-icon";
-
-// ── Vehicle data ─────────────────────────────────────────────────────────────
-
-const YEARS = Array.from({ length: 26 }, (_, i) => String(2025 - i));
-const MAKE_NAMES = MAKES.map((m) => m.name);
-const MODELS_BY_MAKE: Record<string, string[]> = Object.fromEntries(
-  MAKES.map((m) => [m.name, m.models])
-);
+import VehicleSearch from "@/components/vehicle-search";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -154,12 +147,6 @@ function ProductCard({ part }: { part: Product }) {
 export default function HomePage() {
   const [lookupTab, setLookupTab] = useState<"vehicle" | "vin">("vehicle");
 
-  const [year, setYear]     = useState("");
-  const [make, setMake]     = useState("");
-  const [model, setModel]   = useState("");
-  const [engine, setEngine] = useState("");
-  const models = make ? (MODELS_BY_MAKE[make] ?? []) : [];
-
   const [activeCategory, setActiveCategory] = useState<string>("All");
 
   // VIN decoder state
@@ -168,11 +155,10 @@ export default function HomePage() {
   const [vinResult, setVinResult] = useState<{ year: string; make: string; model: string } | null>(null);
   const [vinError, setVinError] = useState("");
 
-  function handleVehicleSearch() {
-    if (year && make && model) {
-      const qs = new URLSearchParams({ year, make, model, ...(engine ? { engine } : {}) });
-      window.location.href = `/search?${qs.toString()}`;
-    }
+  function handleVehicleSearch(selection: { year: string; make: string; model: string; engine: string }) {
+    const { year, make, model, engine } = selection;
+    const qs = new URLSearchParams({ year, make, model, ...(engine ? { engine } : {}) });
+    window.location.href = `/search?${qs.toString()}`;
   }
 
   async function handleVinDecode() {
@@ -257,7 +243,7 @@ export default function HomePage() {
           <div className="text-center mb-8">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-600/10 px-4 py-1.5 text-sm text-red-400">
               <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse shrink-0" />
-              Serving Mechanics &amp; Drivers Since 2015 · 1,000+ Parts In Stock
+              Serving Mechanics &amp; Drivers Since 2015 · 1,500+ Parts In Stock
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-white">
               Find the Right Part for{" "}
@@ -291,70 +277,7 @@ export default function HomePage() {
             </div>
 
             {lookupTab === "vehicle" ? (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="relative">
-                    <select
-                      value={year}
-                      onChange={(e) => { setYear(e.target.value); setMake(""); setModel(""); }}
-                      className="w-full appearance-none rounded-lg border border-zinc-600 bg-zinc-700 text-white px-3 py-3 pr-8 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors cursor-pointer"
-                    >
-                      <option value="">Year</option>
-                      {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
-                  </div>
-
-                  <div className="relative">
-                    <select
-                      value={make}
-                      onChange={(e) => { setMake(e.target.value); setModel(""); }}
-                      disabled={!year}
-                      className="w-full appearance-none rounded-lg border border-zinc-600 bg-zinc-700 text-white px-3 py-3 pr-8 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors cursor-pointer disabled:opacity-40"
-                    >
-                      <option value="">Make</option>
-                      {MAKE_NAMES.map((m) => <option key={m} value={m}>{m}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
-                  </div>
-
-                  <div className="relative">
-                    <select
-                      value={model}
-                      onChange={(e) => setModel(e.target.value)}
-                      disabled={!make}
-                      className="w-full appearance-none rounded-lg border border-zinc-600 bg-zinc-700 text-white px-3 py-3 pr-8 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors cursor-pointer disabled:opacity-40"
-                    >
-                      <option value="">Model</option>
-                      {models.map((mdl) => <option key={mdl} value={mdl}>{mdl}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
-                  </div>
-
-                  <div className="relative">
-                    <select
-                      value={engine}
-                      onChange={(e) => setEngine(e.target.value)}
-                      disabled={!model}
-                      className="w-full appearance-none rounded-lg border border-zinc-600 bg-zinc-700 text-white px-3 py-3 pr-8 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors cursor-pointer disabled:opacity-40"
-                    >
-                      <option value="">Engine</option>
-                      {ENGINES.map((e) => <option key={e} value={e}>{e}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400 pointer-events-none" />
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleVehicleSearch}
-                  disabled={!year || !make || !model}
-                  className="mt-3 w-full rounded-lg bg-red-600 hover:bg-red-500 active:bg-red-700 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-semibold py-3.5 px-6 flex items-center justify-center gap-2 transition-colors text-sm"
-                >
-                  <Search className="h-4 w-4" />
-                  Find Parts for My{" "}
-                  {year && make && model ? `${year} ${make} ${model}` : "Vehicle"}
-                </button>
-              </>
+              <VehicleSearch onSearch={handleVehicleSearch} />
             ) : (
               <>
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -441,7 +364,7 @@ export default function HomePage() {
           <div className="flex items-end justify-between mb-8">
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold text-white">Shop by Category</h2>
-              <p className="mt-1 text-sm text-zinc-400">1,000 parts across 10 automotive categories</p>
+              <p className="mt-1 text-sm text-zinc-400">1,500 parts across 15 automotive categories</p>
             </div>
             <Link href="/parts" className="hidden sm:flex items-center gap-1 text-sm font-medium text-red-400 hover:text-red-300 transition-colors">
               View All <ArrowRight className="h-4 w-4" />
@@ -681,7 +604,7 @@ export default function HomePage() {
                 <span className="text-xl font-extrabold text-white tracking-tight">RockAutoTec</span>
               </div>
               <p className="text-sm text-zinc-400 leading-relaxed max-w-xs">
-                Your trusted source for quality auto parts since 2015. 1,000+ parts across 10 categories for every make and model.
+                Your trusted source for quality auto parts since 2015. 1,500+ parts across 15 categories for every make and model.
               </p>
               <ul className="mt-5 space-y-2 text-sm text-zinc-400">
                 <li className="flex items-center gap-2">
