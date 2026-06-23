@@ -409,12 +409,10 @@ export default function HomePage() {
               <Link
                 key={m.slug}
                 href={`/make/${m.slug}`}
-                className="group flex flex-col items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950 p-4 hover:border-red-600 hover:bg-zinc-800 transition-all duration-200"
+                className="flex flex-col items-center justify-center gap-2 rounded-xl bg-zinc-800 p-4 hover:bg-zinc-700 transition-colors duration-200"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-600/10 text-red-500 group-hover:bg-red-600 group-hover:text-white transition-all duration-200">
-                  <Car className="h-4 w-4" />
-                </span>
-                <span className="text-xs font-bold text-zinc-200 group-hover:text-white transition-colors">{m.name}</span>
+                <Car className="h-4 w-4 text-red-500" />
+                <span className="text-sm font-bold text-white">{m.name}</span>
               </Link>
             ))}
           </div>
