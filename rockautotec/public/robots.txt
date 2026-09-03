@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Disallow private / user-specific routes
+Disallow: /admin/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /orders
+Disallow: /profile
+Disallow: /api/
+
+# Allow search engines to crawl all product and category pages
+Allow: /parts
+Allow: /search
+Allow: /category/
+Allow: /make/
+Allow: /brand/
+Allow: /part/
+
+Sitemap: https://www.rockautotec.com/sitemap.xml
