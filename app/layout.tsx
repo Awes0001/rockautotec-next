@@ -2,12 +2,13 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import Script from "next/script";
 import "./globals.css";
 import Providers from "./providers";
 import Navbar from "@/components/navbar";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist({ variable: "--font-geist-mono", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -107,6 +108,20 @@ export default function RootLayout({
         </Providers>
 
         <GoogleAnalytics gaId="G-QMTF5JVRYW" />
+
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=AW-18132637023"
+          strategy="afterInteractive"
+        />
+        <Script id="google-ads-tag" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){window.dataLayer.push(arguments);}
+            window.gtag = window.gtag || gtag;
+            window.gtag('js', new Date());
+            window.gtag('config', 'AW-18132637023');
+          `}
+        </Script>
       </body>
     </html>
   );
