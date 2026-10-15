@@ -1,11 +1,13 @@
+
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import Providers from "./providers";
 import Navbar from "@/components/navbar";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const geistMono = Geist({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -60,7 +62,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "RockAutoTec — Professional Auto Parts",
-    description: "Shop 1,500+ OEM and aftermarket auto parts. Free shipping on orders $75+.",
+    description:
+      "Shop 1,500+ OEM and aftermarket auto parts. Free shipping on orders $75+.",
     images: ["/og-image.jpg"],
   },
   robots: {
@@ -82,7 +85,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" className="scroll-smooth">
       <body
@@ -98,6 +105,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             Skip to main content
           </a>
         </Providers>
+
+        <GoogleAnalytics gaId="G-QMTF5JVRYW" />
       </body>
     </html>
   );
