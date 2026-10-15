@@ -71,7 +71,7 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="flex items-start gap-2 rounded-lg border border-red-800 bg-red-900/20 px-4 py-3 mb-5 text-sm text-red-400">
+            <div className="flex items-start gap-2 rounded-lg border border-rose-800 bg-rose-900/20 px-4 py-3 mb-5 text-sm text-rose-400">
               <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" /> {error}
             </div>
           )}

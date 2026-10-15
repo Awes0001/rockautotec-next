@@ -1,8 +1,66 @@
 @import "tailwindcss";
 
+/*
+ * Premium navy/gold rebrand.
+ * RockAutoTec previously used Tailwind's built-in `zinc` (neutrals) and
+ * `red` (brand accent) palettes throughout every page. Rather than editing
+ * className strings across 25+ files, we override those two palettes'
+ * underlying color tokens here — every existing `bg-zinc-950`, `text-red-500`,
+ * etc. across the whole site picks up the new colors automatically, with
+ * zero changes to component markup, logic, or routes.
+ *
+ * A handful of genuinely alarm-semantic spots (Out of Stock labels, VIN
+ * decode errors, login error banners) were intentionally switched to the
+ * untouched `rose` scale in their own files so they still read as "red alert"
+ * rather than turning gold along with the rest of the brand accent.
+ */
+@theme {
+  /* Navy — replaces zinc as the neutral/background scale (#08111f at 950) */
+  --color-zinc-50: #eef2f7;
+  --color-zinc-100: #dde4ed;
+  --color-zinc-200: #b9c7d6;
+  --color-zinc-300: #94a9c0;
+  --color-zinc-400: #6f8caa;
+  --color-zinc-500: #4d6d8c;
+  --color-zinc-600: #38536d;
+  --color-zinc-700: #283c52;
+  --color-zinc-800: #182739;
+  --color-zinc-900: #0f1a29;
+  --color-zinc-950: #08111f;
+
+  /* Gold — replaces red as the brand accent scale (#d4af37 at 500) */
+  --color-red-50: #fbf6e7;
+  --color-red-100: #f7edd0;
+  --color-red-200: #efdba1;
+  --color-red-300: #e7c972;
+  --color-red-400: #ddbb4f;
+  --color-red-500: #d4af37;
+  --color-red-600: #b8932a;
+  --color-red-700: #93741f;
+  --color-red-800: #6e5717;
+  --color-red-900: #4a3a0f;
+  --color-red-950: #2c220a;
+
+  /*
+   * CTA — a genuine red, purely additive (does not override any existing
+   * token). Nothing referenced `cta-*` before this, so adding it cannot
+   * change how any other page renders. Used only for primary action buttons
+   * on the homepage per the "Deep Blue primary / Gold accent / Red CTA"
+   * color system, keeping that distinction separate from the brand-gold
+   * scale above (which still lives under `red-*` everywhere else).
+   */
+  --color-cta-50: #fef2f2;
+  --color-cta-100: #fee2e2;
+  --color-cta-400: #f87171;
+  --color-cta-500: #ef4444;
+  --color-cta-600: #dc2626;
+  --color-cta-700: #b91c1c;
+  --color-cta-800: #991b1b;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #08111f;
+  --foreground: #ffffff;
 }
 
 @theme inline {
@@ -12,15 +70,42 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Brand marquee animation */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee-scroll 32s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}
+
+/* Promo banner message fade/slide transition */
+@keyframes promo-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-promo-fade {
+  animation: promo-fade-in 0.4s ease-out;
+}
+
+/* Subtle blueprint grid used behind the hero */
+.bg-blueprint-grid {
+  background-image:
+    linear-gradient(rgba(96, 165, 250, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(96, 165, 250, 0.18) 1px, transparent 1px);
+  background-size: 40px 40px;
 }

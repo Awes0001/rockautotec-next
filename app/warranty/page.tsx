@@ -168,7 +168,7 @@ export default function WarrantyPage() {
               Contact Support
             </Link>
             <a
-              href="tel:18007622886"
+              href="tel:18001-844-408-30042886"
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-zinc-600 hover:border-zinc-500 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold px-5 py-2.5 text-sm transition-colors"
             >
               1-800-ROC-AUTO

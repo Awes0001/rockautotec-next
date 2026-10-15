@@ -3,11 +3,12 @@
 import { useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Search, SlidersHorizontal, X, Star, ShoppingCart, ChevronDown, Tag, AlertTriangle, Check } from "lucide-react";
+import { Search, SlidersHorizontal, X, Star, ShoppingCart, ChevronDown, Tag, AlertTriangle, Check, Car } from "lucide-react";
 import {
-  ALL_PRODUCTS, CATEGORIES, CATEGORY_ICON_NAMES, searchProducts,
+  ALL_PRODUCTS, CATEGORIES, CATEGORY_ICON_NAMES,
   isLowStock, lowStockCount, shippingEstimate, type Product,
 } from "@/lib/catalog";
+import { searchProducts as searchProductsScored, getExactMatches } from "@/lib/search";
 import { useCart } from "@/components/cart-context";
 import PartIcon from "@/components/part-icon";
 
@@ -35,7 +36,7 @@ function StarRating({ rating }: { rating: number }) {
 }
 
 function StockBadge({ part }: { part: Product }) {
-  if (!part.inStock) return <span className="text-[10px] font-semibold text-red-500 shrink-0">Out of Stock</span>;
+  if (!part.inStock) return <span className="text-[10px] font-semibold text-rose-500 shrink-0">Out of Stock</span>;
   if (isLowStock(part)) {
     return (
       <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-400 shrink-0">
@@ -47,6 +48,108 @@ function StockBadge({ part }: { part: Product }) {
     <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-500 shrink-0">
       <Check className="h-3 w-3" /> In Stock
     </span>
+  );
+}
+
+function ResultCard({
+  part,
+  addedId,
+  onAdd,
+}: {
+  part: Product;
+  addedId: number | null;
+  onAdd: (part: Product) => void;
+}) {
+  const savings = Math.round(((part.was - part.price) / part.was) * 100);
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-zinc-700 transition-all duration-150 flex flex-col">
+      <Link href={`/part/${part.id}`} className="relative block">
+        <PartIcon
+          category={part.category}
+          iconName={CATEGORY_ICON_NAMES[part.category]}
+          className="h-32"
+          iconClassName="h-9 w-9"
+        />
+        {savings > 0 && (
+          <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+            SAVE {savings}%
+          </span>
+        )}
+      </Link>
+
+      <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-zinc-800 bg-zinc-950/60">
+        <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider truncate">
+          {part.category}
+        </span>
+        <StockBadge part={part} />
+      </div>
+
+      <div className="p-4 flex-1 flex flex-col">
+        <div className="mb-2">
+          <Link
+            href={`/part/${part.id}`}
+            className="text-sm font-semibold text-white hover:text-red-400 leading-snug line-clamp-2 transition-colors"
+          >
+            {part.name}
+          </Link>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            {part.brand} · <span className="font-mono">{part.sku}</span>
+          </p>
+          <p className="text-[11px] text-zinc-600 font-mono mt-0.5">OEM {part.oemNumber}</p>
+        </div>
+
+        <div className="flex items-center gap-2 mb-2">
+          <StarRating rating={part.rating} />
+          <span className="text-[11px] text-zinc-500">
+            {part.rating} ({part.reviews.toLocaleString()})
+          </span>
+        </div>
+        <p className="text-[11px] text-zinc-500 mb-2">{shippingEstimate(part)}</p>
+        <div className="mb-3">
+          <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-600/10 px-2 py-0.5 text-[10px] font-semibold text-red-400">
+            <Car className="h-3 w-3" />
+            Fits {part.fitment.length} vehicle{part.fitment.length === 1 ? "" : "s"}
+          </span>
+        </div>
+
+        <div className="mt-auto flex items-end justify-between gap-2">
+          <div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-bold text-white">
+                ${part.price.toFixed(2)}
+              </span>
+              <span className="text-xs text-zinc-600 line-through">
+                ${part.was.toFixed(2)}
+              </span>
+            </div>
+            <span className="inline-block text-[10px] font-semibold text-emerald-400 bg-emerald-950/50 border border-emerald-900/50 rounded px-1.5 py-0.5 mt-0.5">
+              Save {savings}%
+            </span>
+          </div>
+          <button
+            onClick={() => onAdd(part)}
+            disabled={!part.inStock}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors shrink-0 ${
+              addedId === part.id
+                ? "bg-emerald-600 text-white"
+                : part.inStock
+                ? "bg-red-600 hover:bg-red-500 text-white"
+                : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
+            }`}
+          >
+            {addedId === part.id ? (
+              "Added!"
+            ) : (
+              <>
+                <ShoppingCart className="h-3.5 w-3.5" />
+                Add
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -68,8 +171,15 @@ function SearchContent() {
 
   const activeFilterCount = selectedCats.length + (priceRange ? 1 : 0);
 
+  const exactMatches = useMemo(
+    () => (query.trim() ? getExactMatches(query) : []),
+    [query]
+  );
+
   const results = useMemo(() => {
-    let parts: Product[] = query.trim() ? searchProducts(query) : ALL_PRODUCTS;
+    let parts: Product[] = query.trim()
+      ? searchProductsScored(query).map((r) => r.product)
+      : ALL_PRODUCTS;
 
     if (hasVehicle) {
       const yearNum = parseInt(vehicleYear, 10);
@@ -117,8 +227,6 @@ function SearchContent() {
     setPriceRange(null);
   }
 
-  const savings = (part: Product) => Math.round(((part.was - part.price) / part.was) * 100);
-
   return (
     <div className="min-h-screen bg-zinc-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -139,7 +247,7 @@ function SearchContent() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search part name, brand, SKU, or OEM number…"
+            placeholder="Search by name, SKU, OEM number, brand... (e.g. 04465-AZ010, PF63, Bosch)"
             className="w-full rounded-xl border border-zinc-700 bg-zinc-900 text-white placeholder:text-zinc-500 pl-12 pr-10 py-3.5 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
           />
           {query && (
@@ -310,13 +418,25 @@ function SearchContent() {
               </select>
             </div>
 
+            {/* Exact Match Found */}
+            {query.trim() && exactMatches.length > 0 && (
+              <div className="border border-green-700 bg-green-950/30 rounded-xl p-4 mb-6">
+                <p className="text-sm font-semibold text-green-400 mb-3">Exact Match Found</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {exactMatches.map((r) => (
+                    <ResultCard key={r.product.id} part={r.product} addedId={addedId} onAdd={handleAddToCart} />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Empty state */}
             {results.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl border border-zinc-800 bg-zinc-900">
                 <Search className="h-12 w-12 text-zinc-700 mb-4" />
                 <p className="text-white font-semibold mb-2">No parts found</p>
                 <p className="text-sm text-zinc-500 mb-6">
-                  Try adjusting your search terms or clearing filters
+                  No results found for &lsquo;{query}&rsquo;. Try searching by product name, SKU, OEM number, or brand.
                 </p>
                 <button
                   onClick={() => { setQuery(""); clearAll(); }}
@@ -328,90 +448,7 @@ function SearchContent() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {results.map((part) => (
-                  <div
-                    key={part.id}
-                    className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-zinc-700 transition-all duration-150 flex flex-col"
-                  >
-                    <Link href={`/part/${part.id}`} className="relative block">
-                      <PartIcon
-                        category={part.category}
-                        iconName={CATEGORY_ICON_NAMES[part.category]}
-                        className="h-32"
-                        iconClassName="h-9 w-9"
-                      />
-                      {savings(part) > 0 && (
-                        <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">
-                          SAVE {savings(part)}%
-                        </span>
-                      )}
-                    </Link>
-
-                    <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-zinc-800 bg-zinc-950/60">
-                      <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider truncate">
-                        {part.category}
-                      </span>
-                      <StockBadge part={part} />
-                    </div>
-
-                    <div className="p-4 flex-1 flex flex-col">
-                      <div className="mb-2">
-                        <Link
-                          href={`/part/${part.id}`}
-                          className="text-sm font-semibold text-white hover:text-red-400 leading-snug line-clamp-2 transition-colors"
-                        >
-                          {part.name}
-                        </Link>
-                        <p className="text-xs text-zinc-500 mt-0.5">
-                          {part.brand} · <span className="font-mono">{part.sku}</span>
-                        </p>
-                        <p className="text-[11px] text-zinc-600 font-mono mt-0.5">OEM {part.oemNumber}</p>
-                      </div>
-
-                      <div className="flex items-center gap-2 mb-2">
-                        <StarRating rating={part.rating} />
-                        <span className="text-[11px] text-zinc-500">
-                          {part.rating} ({part.reviews.toLocaleString()})
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-zinc-500 mb-3">{shippingEstimate(part)}</p>
-
-                      <div className="mt-auto flex items-end justify-between gap-2">
-                        <div>
-                          <div className="flex items-baseline gap-1.5">
-                            <span className="text-lg font-bold text-white">
-                              ${part.price.toFixed(2)}
-                            </span>
-                            <span className="text-xs text-zinc-600 line-through">
-                              ${part.was.toFixed(2)}
-                            </span>
-                          </div>
-                          <span className="inline-block text-[10px] font-semibold text-emerald-400 bg-emerald-950/50 border border-emerald-900/50 rounded px-1.5 py-0.5 mt-0.5">
-                            Save {savings(part)}%
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => handleAddToCart(part)}
-                          disabled={!part.inStock}
-                          className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-colors shrink-0 ${
-                            addedId === part.id
-                              ? "bg-emerald-600 text-white"
-                              : part.inStock
-                              ? "bg-red-600 hover:bg-red-500 text-white"
-                              : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
-                          }`}
-                        >
-                          {addedId === part.id ? (
-                            "Added!"
-                          ) : (
-                            <>
-                              <ShoppingCart className="h-3.5 w-3.5" />
-                              Add
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <ResultCard key={part.id} part={part} addedId={addedId} onAdd={handleAddToCart} />
                 ))}
               </div>
             )}

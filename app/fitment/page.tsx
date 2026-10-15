@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Wrench, Check, Phone, ChevronRight, Car, Search, Shield, AlertCircle } from "lucide-react";
+import { GarageManager } from "@/components/my-garage";
 
 export const metadata: Metadata = {
   title: "Fitment Verification Guide",
@@ -102,6 +103,9 @@ export default function FitmentPage() {
           </div>
         </div>
 
+        {/* My Garage */}
+        <GarageManager />
+
         {/* How It Works */}
         <section>
           <h2 className="text-2xl font-bold text-white mb-6">How Fitment Verification Works</h2>
@@ -169,7 +173,7 @@ export default function FitmentPage() {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <a
-              href="tel:18007622886"
+              href="tel:18001-844-408-30042886"
               className="flex items-center justify-center gap-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-3 text-sm transition-colors"
             >
               <Phone className="h-4 w-4" />

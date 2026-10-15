@@ -1,12 +1,12 @@
 import {
   Disc, Gauge, Settings, Thermometer, Zap, Fuel, Flame, Wind, Lightbulb, Car,
-  CircleDot, Rocket, Truck, Snowflake, Cog,
+  CircleDot, Rocket, Truck, Snowflake, Cog, Filter,
   type LucideIcon,
 } from "lucide-react";
 
 const ICONS: Record<string, LucideIcon> = {
   Disc, Gauge, Settings, Thermometer, Zap, Fuel, Flame, Wind, Lightbulb, Car,
-  CircleDot, Rocket, Truck, Snowflake, Cog,
+  CircleDot, Rocket, Truck, Snowflake, Cog, Filter,
 };
 
 const GRADIENTS: Record<string, string> = {
@@ -25,7 +25,11 @@ const GRADIENTS: Record<string, string> = {
   "Towing & Hauling": "from-stone-800 to-zinc-900",
   "Climate Control":  "from-cyan-950 to-zinc-900",
   Drivetrain:         "from-purple-950 to-zinc-900",
+  "Filters & Maintenance": "from-lime-950 to-zinc-900",
 };
+
+/** Subtle per-slot variation so a 4-image gallery built from one icon family doesn't look like 4 copies of the same tile. */
+const VARIANT_TRANSFORMS = ["rotate-0 scale-100", "rotate-6 scale-95", "-rotate-6 scale-95", "rotate-3 scale-90"];
 
 /**
  * Renders a category-specific icon tile in place of a product photo.
@@ -37,20 +41,32 @@ export default function PartIcon({
   iconName,
   className = "",
   iconClassName = "h-10 w-10",
+  variant,
+  zoom = false,
 }: {
   category: string;
   iconName: string;
   className?: string;
   iconClassName?: string;
+  /** 0-3 — picks a slightly different rotation/scale so gallery thumbnails read as distinct shots. Omit for the default look used everywhere else. */
+  variant?: number;
+  /** Scales the icon up on hover — used by the product page's main gallery image. */
+  zoom?: boolean;
 }) {
   const Icon = ICONS[iconName] ?? Settings;
   const gradient = GRADIENTS[category] ?? "from-zinc-800 to-zinc-900";
+  const transform = variant !== undefined ? VARIANT_TRANSFORMS[variant % VARIANT_TRANSFORMS.length] : "";
 
   return (
     <div
-      className={`flex items-center justify-center bg-gradient-to-br ${gradient} ${className}`}
+      className={`group/icon flex items-center justify-center overflow-hidden bg-gradient-to-br ${gradient} ${className}`}
     >
-      <Icon className={`${iconClassName} text-zinc-500`} strokeWidth={1.5} />
+      <Icon
+        className={`${iconClassName} text-zinc-500 transition-transform duration-300 ${transform} ${
+          zoom ? "group-hover/icon:scale-125" : ""
+        }`}
+        strokeWidth={1.5}
+      />
     </div>
   );
 }

@@ -307,7 +307,7 @@ export default function BrandPage() {
                     />
                     {/* Stock badge */}
                     {!product.inStock ? (
-                      <span className="absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-900/60 text-red-400 border border-red-700/40">
+                      <span className="absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-900/60 text-rose-400 border border-rose-700/40">
                         Out of Stock
                       </span>
                     ) : isLowStock(product) ? (

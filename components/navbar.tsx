@@ -12,9 +12,11 @@ import { useCart } from "@/components/cart-context";
 import { useAuth } from "@/components/auth-context";
 import {
   CATEGORIES, CATEGORY_SLUGS, CATEGORY_ICON_NAMES,
-  BRANDS, brandSlug, searchProducts,
+  BRANDS, brandSlug,
 } from "@/lib/catalog";
+import { searchProducts as searchProductsScored } from "@/lib/search";
 import PartIcon from "@/components/part-icon";
+import { GarageDropdown } from "@/components/my-garage";
 
 // ── Static data ────────────────────────────────────────────────────────────
 
@@ -39,7 +41,9 @@ type MegaPanel = "make" | "category" | "brand" | null;
 // ── Search suggestion hook ─────────────────────────────────────────────────
 
 function useLiveSearch(query: string) {
-  return query.trim().length >= 2 ? searchProducts(query).slice(0, 6) : [];
+  return query.trim().length >= 2
+    ? searchProductsScored(query).slice(0, 6).map((r) => r.product)
+    : [];
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -115,8 +119,8 @@ export default function Navbar() {
               </span>
               <span className="flex items-center gap-1.5">
                 <Phone className="h-3 w-3 text-red-500" />
-                <a href="tel:+18007625832" className="hover:text-white transition-colors">
-                  1-800-762-5832
+                <a href="tel:+18444083004" className="hover:text-white transition-colors">
+                  1-844-408-3004
                 </a>
               </span>
             </div>
@@ -156,7 +160,7 @@ export default function Navbar() {
                     value={searchQ}
                     onChange={(e) => { setSearchQ(e.target.value); setSearchOpen(true); }}
                     onFocus={() => setSearchOpen(true)}
-                    placeholder="Search part name, SKU, or OEM number…"
+                    placeholder="Search parts, SKU, OEM number…"
                     className="w-full pl-11 pr-4 py-2.5 rounded-l-xl border border-zinc-700 bg-zinc-800 text-white placeholder:text-zinc-500 text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
                     aria-label="Search parts"
                   />
@@ -266,6 +270,9 @@ export default function Navbar() {
                   <span className="hidden lg:inline">Sign In</span>
                 </Link>
               )}
+
+              {/* My Garage (desktop only) */}
+              <GarageDropdown />
 
               {/* Cart */}
               <Link
@@ -569,10 +576,10 @@ export default function Navbar() {
             )}
 
             <div className="border-t border-zinc-800 mt-2 pt-2">
-              <a href="tel:+18007625832" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-zinc-400">
+              <a href="tel:+18001-844-408-30045832" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-zinc-400">
                 <Phone className="h-4 w-4 text-red-500" />
                 <div>
-                  <p className="text-white font-semibold">1-800-762-5832</p>
+                  <p className="text-white font-semibold">1-844-408-3004</p>
                   <p className="text-xs text-zinc-600">Mon–Sat 7am–9pm CT</p>
                 </div>
               </a>

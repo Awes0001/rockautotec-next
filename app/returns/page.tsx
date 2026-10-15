@@ -8,7 +8,7 @@ const STEPS = [
   {
     step: "01",
     title: "Initiate Your Return",
-    desc: "Log in to your account and go to Order History. Select the item(s) you'd like to return and choose a reason. Alternatively, contact our support team at 1-800-762-5832.",
+    desc: "Log in to your account and go to Order History. Select the item(s) you'd like to return and choose a reason. Alternatively, contact our support team at 1-844-408-3004.",
   },
   {
     step: "02",
@@ -261,10 +261,10 @@ export default function ReturnsPage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
             <a
-              href="tel:+18007625832"
+              href="tel:+18001-844-408-30045832"
               className="inline-flex items-center gap-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold px-5 py-2.5 text-sm transition-colors"
             >
-              <Phone className="h-4 w-4" /> 1-800-762-5832
+              <Phone className="h-4 w-4" /> 1-844-408-3004
             </a>
             <Link
               href="/contact"

@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Star, ShoppingCart, Package, SlidersHorizontal,
-  ChevronDown, X, Check, AlertTriangle,
+  ChevronDown, X, Check, AlertTriangle, Car,
 } from "lucide-react";
 import {
   SLUG_TO_CATEGORY, CATEGORY_ICON_NAMES, getProductsByCategory,
@@ -39,7 +39,7 @@ function StarRating({ rating }: { rating: number }) {
 
 function StockBadge({ part }: { part: Product }) {
   if (!part.inStock) {
-    return <span className="text-[10px] font-bold shrink-0 text-red-500">Out of Stock</span>;
+    return <span className="text-[10px] font-bold shrink-0 text-rose-500">Out of Stock</span>;
   }
   if (isLowStock(part)) {
     return (
@@ -401,7 +401,13 @@ export default function CategorySlugPage() {
                         <StarRating rating={part.rating} />
                         <span className="text-[11px] text-zinc-500">{part.rating} ({part.reviews.toLocaleString()})</span>
                       </div>
-                      <p className="text-[11px] text-zinc-500 mb-3">{shippingEstimate(part)}</p>
+                      <p className="text-[11px] text-zinc-500 mb-2">{shippingEstimate(part)}</p>
+                      <div className="mb-3">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-600/10 px-2 py-0.5 text-[10px] font-semibold text-red-400">
+                          <Car className="h-3 w-3" />
+                          Fits {part.fitment.length} vehicle{part.fitment.length === 1 ? "" : "s"}
+                        </span>
+                      </div>
 
                       <div className="mt-auto flex items-end justify-between gap-3">
                         <div>

@@ -15,6 +15,7 @@ export const CATEGORIES = [
   "Brakes", "Suspension", "Engine", "Cooling", "Electrical",
   "Fuel System", "Ignition", "Exhaust", "Lighting", "Body Parts",
   "Tires & Wheels", "Performance", "Towing & Hauling", "Climate Control", "Drivetrain",
+  "Filters & Maintenance",
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];
@@ -35,6 +36,7 @@ export const CATEGORY_SLUGS: Record<Category, string> = {
   "Towing & Hauling": "towing-hauling",
   "Climate Control": "climate-control",
   Drivetrain: "drivetrain",
+  "Filters & Maintenance": "filters-maintenance",
 };
 
 export const SLUG_TO_CATEGORY: Record<string, Category> = Object.fromEntries(
@@ -58,6 +60,7 @@ export const CATEGORY_ICON_NAMES: Record<Category, string> = {
   "Towing & Hauling": "Truck",
   "Climate Control": "Snowflake",
   Drivetrain: "Cog",
+  "Filters & Maintenance": "Filter",
 };
 
 // ─── Brands ────────────────────────────────────────────────────────────────────
@@ -127,6 +130,7 @@ const TEMPLATES: PartTemplate[] = [
   { category: "Brakes", partType: "Brake Hoses",       namePattern: "{brand} Brake Hose – Front",             priceMin: 14,  priceMax: 36  },
   { category: "Brakes", partType: "Brake Fluid",       namePattern: "{brand} DOT 4 Brake Fluid (32oz)",       priceMin: 8,   priceMax: 18  },
   { category: "Brakes", partType: "ABS Sensors",       namePattern: "{brand} ABS Wheel Speed Sensor",         priceMin: 32,  priceMax: 84  },
+  { category: "Brakes", partType: "Brake Hardware",    namePattern: "{brand} Brake Hardware Kit",             priceMin: 12,  priceMax: 32  },
 
   // Suspension
   { category: "Suspension", partType: "Shocks",         namePattern: "{brand} Shock Absorber – Front (Each)",  priceMin: 44,  priceMax: 139 },
@@ -295,6 +299,18 @@ const TEMPLATES: PartTemplate[] = [
   { category: "Drivetrain", partType: "Bearings",     namePattern: "{brand} 4WD Wheel Hub & Bearing",          priceMin: 64,  priceMax: 159 },
   { category: "Drivetrain", partType: "Bearings",     namePattern: "{brand} Transmission Output Shaft Seal",    priceMin: 12,  priceMax: 28  },
   { category: "Drivetrain", partType: "Bearings",     namePattern: "{brand} Axle Bearing & Seal Kit",          priceMin: 38,  priceMax: 84  },
+
+  // Filters & Maintenance
+  { category: "Filters & Maintenance", partType: "Oil Filters",    namePattern: "{brand} Engine Oil Filter",              priceMin: 6,   priceMax: 16  },
+  { category: "Filters & Maintenance", partType: "Engine Oil",     namePattern: "{brand} Full Synthetic Engine Oil (5qt)", priceMin: 24,  priceMax: 54  },
+  { category: "Filters & Maintenance", partType: "Drain Hardware", namePattern: "{brand} Oil Drain Plug Washer (5-Pack)", priceMin: 4,   priceMax: 12  },
+  { category: "Filters & Maintenance", partType: "Air Filters",    namePattern: "{brand} Engine Air Filter",              priceMin: 14,  priceMax: 32  },
+  { category: "Filters & Maintenance", partType: "Cabin Filters",  namePattern: "{brand} Cabin Air Filter",                priceMin: 12,  priceMax: 28  },
+  { category: "Filters & Maintenance", partType: "Fuel Filters",   namePattern: "{brand} Fuel Filter",                     priceMin: 12,  priceMax: 29  },
+  { category: "Filters & Maintenance", partType: "Transmission Filters", namePattern: "{brand} Transmission Filter Kit",  priceMin: 28,  priceMax: 64  },
+  { category: "Filters & Maintenance", partType: "Fluids",         namePattern: "{brand} Windshield Washer Fluid (1 Gal)", priceMin: 6,   priceMax: 14  },
+  { category: "Filters & Maintenance", partType: "Belts",          namePattern: "{brand} Serpentine Belt Tensioner",       priceMin: 28,  priceMax: 69  },
+  { category: "Filters & Maintenance", partType: "Emission Components", namePattern: "{brand} PCV Valve",                 priceMin: 8,   priceMax: 20  },
 ];
 
 // ─── Vehicle fitment data ──────────────────────────────────────────────────────
@@ -338,16 +354,137 @@ export interface Product {
   manufacturer: string;
   sku: string;
   oemNumber: string;
+  /** This brand's own catalog number for the part — distinct from the OEM number and from interchangeNumbers (other brands' cross-references). */
+  aftermarketNumber: string;
   interchangeNumbers: string[];
   price: number;
   was: number;
   rating: number;
   reviews: number;
   category: Category;
+  /** Doubles as "Subcategory" in the schema spec — e.g. category "Brakes", partType "Brake Pads". */
   partType: string;
   inStock: boolean;
+  /** Doubles as "Vehicle Compatibility" in the schema spec. */
   fitment: FitmentEntry[];
+  /** Category-relevant technical specs shown in the product page's Specifications table. */
+  specifications: { label: string; value: string }[];
+  warranty: string;
+  weight: string;
+  dimensions: string;
+  material: string;
+  countryOfOrigin: string;
+  condition: "New" | "Remanufactured";
+  /**
+   * Image gallery tokens (Phase 3 architecture). A token is either a real
+   * image URL (starts with "http" or "/") or a placeholder identifier like
+   * "placeholder-1". components/product-gallery.tsx is the single place
+   * that decides how to render a token — today every token is a placeholder
+   * rendered via PartIcon, but swapping a product's `images` values to real
+   * URLs later makes the gallery render real photos with no code changes.
+   */
+  images: string[];
 }
+
+/** Category-level physical material used for the spec sheet and the Material field. Not per-part-type precise (e.g. rotors vs. pads), which would require many more categories — a reasonable simplification at catalog scale. */
+const CATEGORY_MATERIAL: Record<Category, string> = {
+  Brakes: "Semi-Metallic / Cast Iron",
+  Suspension: "Forged Steel",
+  Engine: "Aluminum / Steel",
+  Cooling: "Aluminum / Plastic Composite",
+  Electrical: "Copper / Plastic Composite",
+  "Fuel System": "Steel / Composite",
+  Ignition: "Ceramic / Metal Alloy",
+  Exhaust: "Stainless Steel",
+  Lighting: "Polycarbonate / Glass",
+  "Body Parts": "ABS Plastic / Steel",
+  "Tires & Wheels": "Rubber / Aluminum Alloy",
+  Performance: "Aluminum / Stainless Steel",
+  "Towing & Hauling": "Steel, Powder-Coated",
+  "Climate Control": "Aluminum",
+  Drivetrain: "Forged Steel",
+  "Filters & Maintenance": "Synthetic Fiber / Steel",
+};
+
+const CATEGORY_SPECIFICATIONS: Record<Category, { label: string; value: string }[]> = {
+  Brakes: [
+    { label: "Friction Material", value: "Ceramic / Semi-Metallic" },
+    { label: "Includes Hardware", value: "Yes" },
+  ],
+  Suspension: [
+    { label: "Mounting Type", value: "Direct OEM Bolt-On" },
+    { label: "Finish", value: "Corrosion-Resistant Coating" },
+  ],
+  Engine: [
+    { label: "OEM Compliant", value: "Yes" },
+    { label: "Tolerance", value: "OEM Spec" },
+  ],
+  Cooling: [
+    { label: "Coolant Type", value: "Universal (verify OEM spec)" },
+    { label: "Pressure Rating", value: "OEM Spec" },
+  ],
+  Electrical: [
+    { label: "Voltage", value: "12V" },
+    { label: "Connector Type", value: "OEM-Matched" },
+  ],
+  "Fuel System": [
+    { label: "Fuel Compatibility", value: "Gasoline (E10 Max)" },
+    { label: "Pressure Rating", value: "OEM Spec" },
+  ],
+  Ignition: [
+    { label: "Voltage", value: "12V" },
+    { label: "Heat Range", value: "OEM Spec" },
+  ],
+  Exhaust: [
+    { label: "Finish", value: "Aluminized Steel" },
+    { label: "Sound Level", value: "OEM-Comparable" },
+  ],
+  Lighting: [
+    { label: "Voltage", value: "12V" },
+    { label: "Bulb/LED Type", value: "OEM-Matched" },
+  ],
+  "Body Parts": [
+    { label: "Finish", value: "Primed, Paint-Ready" },
+    { label: "Mounting Type", value: "Direct OEM Bolt-On" },
+  ],
+  "Tires & Wheels": [
+    { label: "Load Rating", value: "Standard" },
+    { label: "Speed Rating", value: "Standard" },
+  ],
+  Performance: [
+    { label: "Application", value: "Street / Track" },
+    { label: "Finish", value: "Polished / Powder-Coated" },
+  ],
+  "Towing & Hauling": [
+    { label: "Weight Capacity", value: "See title for class rating" },
+    { label: "Finish", value: "Powder-Coated Steel" },
+  ],
+  "Climate Control": [
+    { label: "Refrigerant Type", value: "R-134a / 1234yf (verify OEM)" },
+    { label: "Pressure Rating", value: "OEM Spec" },
+  ],
+  Drivetrain: [
+    { label: "Drive Configuration", value: "OEM-Matched" },
+    { label: "Finish", value: "Corrosion-Resistant Coating" },
+  ],
+  "Filters & Maintenance": [
+    { label: "Filter Media", value: "Multi-Fiber / Synthetic" },
+    { label: "Service Interval", value: "Per OEM maintenance schedule" },
+  ],
+};
+
+const BRAND_ORIGIN: Record<Brand, string> = {
+  Bosch: "Germany",
+  Denso: "Japan",
+  NGK: "Japan",
+  Gates: "USA",
+  Monroe: "USA",
+  KYB: "Japan",
+  Moog: "USA",
+  ACDelco: "USA",
+  Motorcraft: "USA",
+  "Standard Motor Products": "USA",
+};
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -373,20 +510,27 @@ function generateProducts(): Product[] {
       const reviews = 80 + ((seed * 53) % 4800);
 
       const oemNumber = `${code}-${(100000 + id * 7) % 999999}`;
+      const aftermarketNumber = `AM-${code}-${(id * 13) % 99999}`;
       const interchangeNumbers = [
         `DOR${(200000 + id * 3) % 999999}`,
         `RAY${(300000 + id * 11) % 999999}`,
       ];
 
       const sku = `${code}${tpl.partType.replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase()}${id}`;
+      const name = tpl.namePattern.replace("{brand}", brand);
+      const condition: Product["condition"] = name.includes("Remanufactured") ? "Remanufactured" : "New";
+
+      const weight = `${(1 + price / 40).toFixed(1)} lbs`;
+      const dimensions = `${8 + (id % 10)} x ${4 + (id % 6)} x ${2 + (id % 4)} in`;
 
       products.push({
         id,
-        name: tpl.namePattern.replace("{brand}", brand),
+        name,
         brand,
         manufacturer: MANUFACTURER_NAMES[brand],
         sku,
         oemNumber,
+        aftermarketNumber,
         interchangeNumbers,
         price,
         was,
@@ -396,6 +540,14 @@ function generateProducts(): Product[] {
         partType: tpl.partType,
         inStock: seed % 23 !== 0, // ~96% in stock
         fitment: generateFitment(seed + id),
+        specifications: CATEGORY_SPECIFICATIONS[tpl.category],
+        warranty: "12 months / 12,000 miles",
+        weight,
+        dimensions,
+        material: CATEGORY_MATERIAL[tpl.category],
+        countryOfOrigin: BRAND_ORIGIN[brand],
+        condition,
+        images: ["placeholder-1", "placeholder-2", "placeholder-3", "placeholder-4"],
       });
     });
   });
@@ -449,10 +601,64 @@ export function searchProducts(query: string): Product[] {
   );
 }
 
+/**
+ * Scored recommendations (Phase 4): same category, same brand, overlapping
+ * vehicle fitment, and shared interchange/OEM cross-references all push a
+ * candidate's score up. Same partType (the closest possible match, e.g.
+ * "Brake Pads" → "Brake Pads" from a different brand) outranks everything.
+ */
+function relatedScore(product: Product, candidate: Product): number {
+  let score = 0;
+  if (candidate.category === product.category) score += 3;
+  if (candidate.partType === product.partType) score += 4;
+  if (candidate.brand === product.brand) score += 2;
+  if (candidate.oemNumber === product.oemNumber) score += 5;
+  if (candidate.interchangeNumbers.some((n) => product.interchangeNumbers.includes(n))) score += 3;
+  const sharesVehicle = candidate.fitment.some((cf) =>
+    product.fitment.some((pf) => pf.make === cf.make && pf.model === cf.model)
+  );
+  if (sharesVehicle) score += 2;
+  return score;
+}
+
 export function getRelatedProducts(product: Product, count = 4): Product[] {
-  return ALL_PRODUCTS.filter(
-    (p) => p.id !== product.id && p.category === product.category
-  ).slice(0, count);
+  return ALL_PRODUCTS
+    .filter((p) => p.id !== product.id && p.category === product.category)
+    .map((p) => ({ p, score: relatedScore(product, p) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, count)
+    .map(({ p }) => p);
+}
+
+// Phase 5 — explicit companion chains for the catalog's signature cross-sell
+// examples (brake job parts, oil-change parts). Every other part type falls
+// back to "a different part type in the same category", unchanged from
+// before this map existed.
+const COMPANION_PART_TYPES: Record<string, string[]> = {
+  "Brake Pads": ["Brake Rotors", "Brake Hardware"],
+  "Brake Rotors": ["Brake Pads", "Brake Hardware"],
+  "Brake Hardware": ["Brake Pads", "Brake Rotors"],
+  "Oil Filters": ["Engine Oil", "Drain Hardware"],
+  "Engine Oil": ["Oil Filters", "Drain Hardware"],
+  "Drain Hardware": ["Oil Filters", "Engine Oil"],
+};
+
+/** Frequently Bought Together (Phase 5): companion part types when a mapping exists, otherwise any other part type in the same category. */
+export function getFrequentlyBoughtTogether(product: Product, count = 3): Product[] {
+  const companionTypes = COMPANION_PART_TYPES[product.partType];
+  const pool = companionTypes
+    ? ALL_PRODUCTS.filter((p) => p.id !== product.id && companionTypes.includes(p.partType))
+    : ALL_PRODUCTS.filter((p) => p.id !== product.id && p.category === product.category && p.partType !== product.partType);
+
+  const seenTypes = new Set<string>([product.partType]);
+  const picks: Product[] = [];
+  for (const p of pool.sort((a, b) => relatedScore(product, b) - relatedScore(product, a))) {
+    if (seenTypes.has(p.partType)) continue;
+    seenTypes.add(p.partType);
+    picks.push(p);
+    if (picks.length === count) break;
+  }
+  return picks;
 }
 
 export function getFeaturedProducts(count = 8): Product[] {

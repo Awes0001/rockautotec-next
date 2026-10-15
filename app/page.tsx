@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  Phone, ShoppingCart, Star, Truck, Shield, Lock,
+  Phone, ShoppingCart, Star, Truck, Shield, Lock, Hash,
   RotateCcw, Headphones, Check, ArrowRight,
   Car, Package, Tag, ScanLine, Loader2, AlertTriangle,
   TrendingUp, Building2, Mail, Facebook, Twitter, Instagram, Youtube,
@@ -17,8 +17,14 @@ import {
   type Product,
 } from "@/lib/catalog";
 import { MAKES } from "@/lib/makes";
+import { getTotalVehicleCount } from "@/data/vehicles";
 import PartIcon from "@/components/part-icon";
-import VehicleSearch from "@/components/vehicle-search";
+import VehicleSearch, { type VehicleSelection } from "@/components/vehicle-search";
+import BrandMarquee from "@/components/brand-marquee";
+import BrandLogo from "@/components/brand-logo";
+import PartsBrandMarquee from "@/components/parts-brand-marquee";
+import RotatingPromoBanner from "@/components/rotating-promo-banner";
+import AnimatedCounter from "@/components/animated-counter";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -38,7 +44,7 @@ function Stars({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) 
 
 function StockTag({ part }: { part: Product }) {
   if (!part.inStock) {
-    return <span className="text-xs font-semibold text-red-500">Out of Stock</span>;
+    return <span className="text-xs font-semibold text-rose-500">Out of Stock</span>;
   }
   if (isLowStock(part)) {
     return (
@@ -105,10 +111,13 @@ function ProductCard({ part }: { part: Product }) {
             )}
           </div>
           <div className="mb-1"><StockTag part={part} /></div>
-          <p className="text-[11px] text-zinc-500 mb-1">{shippingEstimate(part)}</p>
-          <p className="text-[11px] text-zinc-500 mb-3">
-            Fits {vehicleCount} vehicle{vehicleCount === 1 ? "" : "s"}, incl. {part.fitment[0]?.make} {part.fitment[0]?.model}
-          </p>
+          <p className="text-[11px] text-zinc-500 mb-2">{shippingEstimate(part)}</p>
+          <div className="mb-3">
+            <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-600/10 px-2 py-0.5 text-[10px] font-semibold text-red-400">
+              <Car className="h-3 w-3" />
+              Fits {vehicleCount} vehicle{vehicleCount === 1 ? "" : "s"}
+            </span>
+          </div>
 
           <div className="flex gap-2">
             <button
@@ -122,7 +131,7 @@ function ProductCard({ part }: { part: Product }) {
                 added
                   ? "bg-emerald-600 text-white"
                   : part.inStock
-                  ? "bg-red-600 hover:bg-red-500 active:bg-red-700 text-white"
+                  ? "bg-cta-600 hover:bg-cta-500 active:bg-cta-700 text-white"
                   : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
               }`}
             >
@@ -145,7 +154,8 @@ function ProductCard({ part }: { part: Product }) {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const [lookupTab, setLookupTab] = useState<"vehicle" | "vin">("vehicle");
+  const [lookupTab, setLookupTab] = useState<"vehicle" | "vin" | "oem">("vehicle");
+  const [oemQuery, setOemQuery] = useState("");
 
   const [activeCategory, setActiveCategory] = useState<string>("All");
 
@@ -155,7 +165,7 @@ export default function HomePage() {
   const [vinResult, setVinResult] = useState<{ year: string; make: string; model: string } | null>(null);
   const [vinError, setVinError] = useState("");
 
-  function handleVehicleSearch(selection: { year: string; make: string; model: string; engine: string }) {
+  function handleVehicleSearch(selection: VehicleSelection) {
     const { year, make, model, engine } = selection;
     const qs = new URLSearchParams({ year, make, model, ...(engine ? { engine } : {}) });
     window.location.href = `/search?${qs.toString()}`;
@@ -188,6 +198,8 @@ export default function HomePage() {
     }
   }
 
+  const vehiclesSupported = useMemo(() => getTotalVehicleCount(), []);
+
   const bestSellers = useMemo(() => getFeaturedProducts(8), []);
 
   const todaysDeals = useMemo(
@@ -209,59 +221,68 @@ export default function HomePage() {
     <div className="min-h-screen bg-zinc-950 text-white">
 
       {/* ── Announcement Bar ──────────────────────────────────────────────── */}
-      <div className="bg-red-700 py-2 px-4">
+      <div className="bg-blue-900 py-2 px-4">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs sm:text-sm text-white">
           <span className="flex items-center gap-1.5">
             <Truck className="h-3.5 w-3.5 shrink-0" />
             Free Shipping on Orders $75+
           </span>
-          <span className="hidden sm:block text-red-400">|</span>
+          <span className="hidden sm:block text-blue-400">|</span>
           <span className="flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5 shrink-0" />
             Same-Day Shipping Before 3PM EST
           </span>
-          <span className="hidden sm:block text-red-400">|</span>
+          <span className="hidden sm:block text-blue-400">|</span>
           <span className="flex items-center gap-1.5">
             <RotateCcw className="h-3.5 w-3.5 shrink-0" />
             30-Day Returns
           </span>
-          <span className="hidden sm:block text-red-400">|</span>
+          <span className="hidden sm:block text-blue-400">|</span>
           <span className="flex items-center gap-1.5">
             <Phone className="h-3.5 w-3.5 shrink-0" />
-            1-800-762-5832
+            844-408-3004
           </span>
         </div>
       </div>
 
       {/* ── Hero: Vehicle Lookup (primary homepage element) ───────────────── */}
       <section className="relative overflow-hidden bg-zinc-900 border-b border-zinc-800">
+        <div className="absolute inset-0 bg-blueprint-grid opacity-40 pointer-events-none" />
+        <div
+          className="absolute inset-0 opacity-30 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at 70% 40%, #1d4ed8 0%, transparent 65%)" }}
+        />
         <div
           className="absolute inset-0 opacity-20 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse at 70% 50%, #dc2626 0%, transparent 65%)" }}
+          style={{ background: "radial-gradient(ellipse at 10% 90%, #1e3a8a 0%, transparent 60%)" }}
         />
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 lg:py-20">
-          <div className="text-center mb-8">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-600/10 px-4 py-1.5 text-sm text-red-400">
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+          <div className="text-center mb-10">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-600/10 px-4 py-1.5 text-sm text-red-400">
               <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse shrink-0" />
               Serving Mechanics &amp; Drivers Since 2015 · 1,500+ Parts In Stock
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-white">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] text-white">
               Find the Right Part for{" "}
-              <span className="text-red-500">Your Exact Vehicle.</span>
+              <span className="text-blue-400">Your Exact Vehicle.</span>
             </h1>
-            <p className="mt-3 text-base sm:text-lg text-zinc-400 max-w-xl mx-auto">
-              Search by Year/Make/Model/Engine or decode your VIN for a guaranteed fitment match.
+            <p className="mt-4 text-base sm:text-lg text-zinc-400 max-w-xl mx-auto leading-relaxed">
+              Search by Year, Make, Model &amp; Engine — or decode your VIN — for a guaranteed fitment match.
             </p>
+            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-600/10 px-4 py-1.5 text-sm font-semibold text-red-400">
+              <Shield className="h-4 w-4" />
+              100% Fitment Guarantee
+            </div>
           </div>
 
           {/* Lookup card */}
-          <div className="mx-auto max-w-2xl rounded-2xl border border-zinc-700 bg-zinc-800/80 backdrop-blur p-5 sm:p-6 shadow-2xl">
+          <div className="mx-auto max-w-2xl rounded-2xl border border-blue-900/60 bg-zinc-800/80 backdrop-blur p-5 sm:p-6 shadow-2xl shadow-blue-950/40">
             {/* Tabs */}
             <div className="flex gap-1 mb-5 rounded-lg bg-zinc-900 p-1">
               <button
                 onClick={() => setLookupTab("vehicle")}
                 className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-2 text-sm font-semibold transition-colors ${
-                  lookupTab === "vehicle" ? "bg-red-600 text-white" : "text-zinc-400 hover:text-white"
+                  lookupTab === "vehicle" ? "bg-blue-600 text-white" : "text-zinc-400 hover:text-white"
                 }`}
               >
                 <Car className="h-4 w-4" /> By Vehicle
@@ -269,15 +290,52 @@ export default function HomePage() {
               <button
                 onClick={() => setLookupTab("vin")}
                 className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-2 text-sm font-semibold transition-colors ${
-                  lookupTab === "vin" ? "bg-red-600 text-white" : "text-zinc-400 hover:text-white"
+                  lookupTab === "vin" ? "bg-blue-600 text-white" : "text-zinc-400 hover:text-white"
                 }`}
               >
                 <ScanLine className="h-4 w-4" /> By VIN
+              </button>
+              <button
+                onClick={() => setLookupTab("oem")}
+                className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-2 text-sm font-semibold transition-colors ${
+                  lookupTab === "oem" ? "bg-blue-600 text-white" : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Hash className="h-4 w-4" /> By OEM #
               </button>
             </div>
 
             {lookupTab === "vehicle" ? (
               <VehicleSearch onSearch={handleVehicleSearch} />
+            ) : lookupTab === "oem" ? (
+              <>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (oemQuery.trim()) window.location.href = `/search?q=${encodeURIComponent(oemQuery.trim())}`;
+                  }}
+                  className="flex flex-col sm:flex-row gap-3"
+                >
+                  <input
+                    type="text"
+                    value={oemQuery}
+                    onChange={(e) => setOemQuery(e.target.value)}
+                    placeholder="e.g. 04465-AZ010, PF63"
+                    className="flex-1 rounded-lg border border-zinc-600 bg-zinc-700 text-white placeholder:text-zinc-500 px-4 py-3 text-sm font-mono tracking-wider focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-colors"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!oemQuery.trim()}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-cta-600 hover:bg-cta-500 active:bg-cta-700 disabled:opacity-60 text-white font-semibold px-6 py-3 text-sm transition-colors whitespace-nowrap"
+                  >
+                    <Hash className="h-4 w-4" />
+                    Search OEM #
+                  </button>
+                </form>
+                <p className="mt-2 text-xs text-zinc-500">
+                  Searches OEM numbers, interchange numbers, and SKUs across the full catalog
+                </p>
+              </>
             ) : (
               <>
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -292,7 +350,7 @@ export default function HomePage() {
                   <button
                     onClick={handleVinDecode}
                     disabled={vinLoading}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 hover:bg-red-500 active:bg-red-700 disabled:opacity-60 text-white font-semibold px-6 py-3 text-sm transition-colors whitespace-nowrap"
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-cta-600 hover:bg-cta-500 active:bg-cta-700 disabled:opacity-60 text-white font-semibold px-6 py-3 text-sm transition-colors whitespace-nowrap"
                   >
                     {vinLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanLine className="h-4 w-4" />}
                     {vinLoading ? "Decoding…" : "Decode VIN"}
@@ -301,7 +359,7 @@ export default function HomePage() {
                 <p className="mt-2 text-xs text-zinc-500">{vin.length}/17 characters · powered by the NHTSA vehicle database</p>
 
                 {vinError && (
-                  <div className="mt-4 flex items-start gap-2 rounded-lg border border-red-800/50 bg-red-950/30 px-4 py-3 text-sm text-red-300">
+                  <div className="mt-4 flex items-start gap-2 rounded-lg border border-rose-800/50 bg-rose-950/30 px-4 py-3 text-sm text-rose-300">
                     <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                     {vinError}
                   </div>
@@ -334,15 +392,20 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Brand Marquee ────────────────────────────────────────────────── */}
+      <BrandMarquee />
+
       {/* ── Trust Badges ─────────────────────────────────────────────────── */}
       <section className="bg-zinc-900 border-b border-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             {[
-              { icon: Truck,       title: "Free Shipping",      sub: "All orders $75 and over"   },
-              { icon: Clock,       title: "Same-Day Shipping",  sub: "Order before 3PM EST"       },
-              { icon: RotateCcw,   title: "30-Day Returns",     sub: "Hassle-free, no questions"  },
-              { icon: Headphones,  title: "Customer Support",   sub: "Mon–Sat 7am–9pm CT"          },
+              { icon: Truck,       title: "Fast Shipping",        sub: "Same-day before 3PM EST"     },
+              { icon: Package,     title: "OEM & Aftermarket",    sub: "1,500+ parts in stock"        },
+              { icon: Lock,        title: "Secure Checkout",      sub: "256-bit SSL encryption"       },
+              { icon: Shield,      title: "Fitment Guarantee",    sub: "Wrong part ships free return"  },
+              { icon: Headphones,  title: "USA Support",          sub: "Mon–Sat 7am–9pm CT"            },
+              { icon: RotateCcw,   title: "Easy Returns",         sub: "30-day return window"          },
             ].map(({ icon: Icon, title, sub }) => (
               <div key={title} className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-800/60 p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600/15 text-red-500">
@@ -357,6 +420,33 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Statistics ───────────────────────────────────────────────────── */}
+      <section className="bg-zinc-950 py-14 border-b border-zinc-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-6 text-center">
+            {[
+              { value: ALL_PRODUCTS.length, suffix: "+", label: "OEM Parts" },
+              { value: BRANDS.length,       suffix: "",  label: "Trusted Brands" },
+              { value: 10000,               suffix: "+", label: "Customers Served" },
+              { value: vehiclesSupported,   suffix: "+", label: "Vehicles Supported" },
+              { value: 99,                  suffix: "%", label: "Fitment Accuracy" },
+            ].map(({ value, suffix, label }) => (
+              <div key={label}>
+                <AnimatedCounter
+                  value={value}
+                  suffix={suffix}
+                  className="block text-3xl sm:text-4xl font-extrabold text-blue-400"
+                />
+                <p className="mt-1.5 text-xs sm:text-sm text-zinc-400">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Rotating Promo Banner ─────────────────────────────────────────── */}
+      <RotatingPromoBanner />
 
       {/* ── Shop by Category ───────────────────────────────────────────────── */}
       <section className="bg-zinc-950 py-16">
@@ -376,13 +466,13 @@ export default function HomePage() {
               <Link
                 key={cat}
                 href={`/category/${CATEGORY_SLUGS[cat]}`}
-                className="group flex flex-col items-center text-center rounded-xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5 hover:border-red-600 hover:bg-zinc-800 transition-all duration-200"
+                className="group flex flex-col items-center text-center rounded-2xl border border-zinc-800 bg-zinc-900 p-5 sm:p-6 hover:border-red-500 hover:bg-zinc-800 hover:-translate-y-1 hover:shadow-xl hover:shadow-red-950/30 transition-all duration-300"
               >
                 <PartIcon
                   category={cat}
                   iconName={CATEGORY_ICON_NAMES[cat]}
-                  className="h-12 w-12 rounded-xl mb-3"
-                  iconClassName="h-6 w-6"
+                  className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl mb-4 group-hover:scale-110 transition-transform duration-300"
+                  iconClassName="h-8 w-8 sm:h-10 sm:w-10"
                 />
                 <h3 className="text-xs sm:text-sm font-semibold text-white leading-tight">{cat}</h3>
                 <p className="mt-1 text-xs text-zinc-500">{getProductsByCategory(cat).length} parts</p>
@@ -409,8 +499,9 @@ export default function HomePage() {
               <Link
                 key={m.slug}
                 href={`/make/${m.slug}`}
-                className="block rounded-xl bg-zinc-800 p-4 text-center hover:bg-zinc-700 transition-colors duration-200"
+                className="group flex flex-col items-center gap-2.5 rounded-xl bg-zinc-800 p-4 text-center hover:bg-zinc-700 hover:-translate-y-0.5 transition-all duration-200"
               >
+                <BrandLogo name={m.name} size="md" className="group-hover:scale-105 transition-transform duration-200" />
                 <span className="text-sm font-bold text-white">{m.name}</span>
               </Link>
             ))}
@@ -442,6 +533,16 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ── Featured Brands ───────────────────────────────────────────────── */}
+      <section className="bg-zinc-900 border-y border-zinc-800 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-2">
+          <h2 className="text-center text-xs font-semibold text-zinc-500 uppercase tracking-widest">
+            Featured Brands We Work With
+          </h2>
+        </div>
+        <PartsBrandMarquee />
       </section>
 
       {/* ── Best Sellers ──────────────────────────────────────────────────── */}
@@ -548,7 +649,7 @@ export default function HomePage() {
               { icon: Building2,   title: "Commercial Accounts",   desc: "Volume pricing and Net-30 terms for repair shops and dealerships.", href: "/fleet" },
               { icon: Truck,       title: "Fleet Support",         desc: "Dedicated account management for fleet operators and municipalities.", href: "/fleet" },
               { icon: Headphones,  title: "Customer Support",      desc: "Speak with a real parts specialist Mon–Sat, 7am–9pm CT.", href: "/contact" },
-              { icon: Phone,       title: "Call a Specialist",     desc: "Need help confirming fitment? Call 1-800-762-5832.", href: "tel:+18007625832" },
+              { icon: Phone,       title: "Call a Specialist",     desc: "Need help confirming fitment? Call 1-844-408-3004.", href: "tel:+18001-844-408-30045832" },
             ].map(({ icon: Icon, title, desc, href }) => (
               <Link
                 key={title}
@@ -567,25 +668,25 @@ export default function HomePage() {
       </section>
 
       {/* ── CTA Banner ───────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-red-700 py-16">
+      <section className="relative overflow-hidden bg-blue-900 py-16">
         <div
-          className="absolute inset-0 opacity-20 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse at 20% 50%, #7f1d1d 0%, transparent 70%)" }}
+          className="absolute inset-0 opacity-30 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at 20% 50%, #1d4ed8 0%, transparent 70%)" }}
         />
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
             Get 10% Off Your First Order
           </h2>
-          <p className="mt-3 text-red-200 text-base sm:text-lg max-w-xl mx-auto">
+          <p className="mt-3 text-blue-200 text-base sm:text-lg max-w-xl mx-auto">
             Sign up for restock alerts and parts deals. No spam — just real inventory updates.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 max-w-md mx-auto">
             <input
               type="email"
               placeholder="Enter your email address"
-              className="w-full rounded-lg border border-red-500 bg-red-800/50 text-white placeholder:text-red-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-white"
+              className="w-full rounded-lg border border-blue-700 bg-blue-800/50 text-white placeholder:text-blue-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-white"
             />
-            <button className="w-full sm:w-auto whitespace-nowrap rounded-lg bg-white text-red-700 hover:bg-red-50 active:bg-red-100 font-semibold px-6 py-3 text-sm transition-colors">
+            <button className="w-full sm:w-auto whitespace-nowrap rounded-lg bg-cta-600 hover:bg-cta-500 active:bg-cta-700 text-white font-semibold px-6 py-3 text-sm transition-colors">
               Get My 10% Off
             </button>
           </div>
@@ -608,7 +709,7 @@ export default function HomePage() {
               <ul className="mt-5 space-y-2 text-sm text-zinc-400">
                 <li className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-red-500 shrink-0" />
-                  1-800-762-5832
+                  1-844-408-3004
                 </li>
                 <li className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-red-500 shrink-0" />

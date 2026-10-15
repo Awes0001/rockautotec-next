@@ -92,9 +92,9 @@ export default function ContactPage() {
               {
                 icon: Phone,
                 title: "Call Us",
-                primary: "1-800-762-5832",
+                primary: "1-844-408-3004",
                 secondary: "Mon–Sat 7am–9pm CT",
-                action: "tel:+18007625832",
+                action: "tel:+18444083004",
                 label: "Call Now",
               },
               {
@@ -319,10 +319,10 @@ export default function ContactPage() {
                 <p className="text-sm text-red-400 font-semibold mb-1">Need Immediate Help?</p>
                 <p className="text-xs text-zinc-400 mb-3">For urgent order issues, calling is fastest.</p>
                 <a
-                  href="tel:+18007625832"
+                  href="tel:+18001-844-408-30045832"
                   className="flex items-center justify-center gap-2 w-full rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold py-2.5 text-sm transition-colors"
                 >
-                  <Phone className="h-4 w-4" /> 1-800-762-5832
+                  <Phone className="h-4 w-4" /> 1-844-408-3004
                 </a>
               </div>
             </div>

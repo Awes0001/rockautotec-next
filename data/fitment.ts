@@ -173,22 +173,53 @@ export const FITMENT_DATABASE: SkuFitment[] = [
   },
 ];
 
-// ─── Helpers ────────────────────────────────────────────────────────────────────
+// ─── Indices (Phase 6 — built once at module load) ──────────────────────────────
+//
+// getFitmentForSku/doesPartFit/getPartsForVehicle below are the public API
+// every consumer (app/part/[id]/page.tsx, components/my-garage.tsx) already
+// calls — signatures and return shapes are unchanged. What changed is how
+// they resolve: instead of linear-scanning FITMENT_DATABASE on every call
+// (fine at 20 records, not at 500,000), each entry is indexed once by SKU
+// and by "make|model" so both lookup directions stay O(1) + O(records for
+// that one vehicle) as the dataset grows, instead of O(every record).
+
+const fitmentBySku = new Map<string, FitmentRange[]>(
+  FITMENT_DATABASE.map((f) => [f.sku, f.fitment])
+);
+
+interface IndexedFitment extends FitmentRange {
+  sku: string;
+}
+
+const fitmentByMakeModel = new Map<string, IndexedFitment[]>();
+for (const { sku: skuValue, fitment } of FITMENT_DATABASE) {
+  for (const range of fitment) {
+    const key = `${range.make.toLowerCase()}|${range.model.toLowerCase()}`;
+    const entry: IndexedFitment = { ...range, sku: skuValue };
+    const list = fitmentByMakeModel.get(key);
+    if (list) list.push(entry);
+    else fitmentByMakeModel.set(key, [entry]);
+  }
+}
+
+// ─── Public API ──────────────────────────────────────────────────────────────────
 
 export function getFitmentForSku(skuValue: string): FitmentRange[] {
-  return FITMENT_DATABASE.find((f) => f.sku === skuValue)?.fitment ?? [];
+  return fitmentBySku.get(skuValue) ?? [];
 }
 
 export function doesPartFit(skuValue: string, year: number, make: string, model: string): boolean {
-  return getFitmentForSku(skuValue).some(
-    (f) =>
-      f.make.toLowerCase() === make.toLowerCase() &&
-      f.model.toLowerCase() === model.toLowerCase() &&
-      year >= f.year_start &&
-      year <= f.year_end
-  );
+  const candidates = fitmentByMakeModel.get(`${make.toLowerCase()}|${model.toLowerCase()}`);
+  if (!candidates) return false;
+  return candidates.some((f) => f.sku === skuValue && year >= f.year_start && year <= f.year_end);
 }
 
 export function getPartsForVehicle(year: number, make: string, model: string): string[] {
-  return FITMENT_DATABASE.filter((f) => doesPartFit(f.sku, year, make, model)).map((f) => f.sku);
+  const candidates = fitmentByMakeModel.get(`${make.toLowerCase()}|${model.toLowerCase()}`);
+  if (!candidates) return [];
+  const skus = new Set<string>();
+  for (const f of candidates) {
+    if (year >= f.year_start && year <= f.year_end) skus.add(f.sku);
+  }
+  return Array.from(skus);
 }
