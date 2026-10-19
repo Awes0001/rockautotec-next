@@ -128,7 +128,16 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{title}</p>
-                  <p className="text-sm font-semibold text-white mt-1">{primary}</p>
+                  {action === "tel:+18444083004" ? (
+                    <a
+                      href="tel:+18444083004"
+                      className="mt-1 inline-block text-sm font-semibold text-white hover:text-red-400 transition-colors"
+                    >
+                      {primary}
+                    </a>
+                  ) : (
+                    <p className="text-sm font-semibold text-white mt-1">{primary}</p>
+                  )}
                   <p className="text-xs text-zinc-500 mt-0.5">{secondary}</p>
                 </div>
                 <a
@@ -319,7 +328,7 @@ export default function ContactPage() {
                 <p className="text-sm text-red-400 font-semibold mb-1">Need Immediate Help?</p>
                 <p className="text-xs text-zinc-400 mb-3">For urgent order issues, calling is fastest.</p>
                 <a
-                  href="tel:+18001-844-408-30045832"
+                  href="tel:+18444083004"
                   className="flex items-center justify-center gap-2 w-full rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold py-2.5 text-sm transition-colors"
                 >
                   <Phone className="h-4 w-4" /> 1-844-408-3004

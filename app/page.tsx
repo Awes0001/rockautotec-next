@@ -25,6 +25,7 @@ import BrandLogo from "@/components/brand-logo";
 import PartsBrandMarquee from "@/components/parts-brand-marquee";
 import RotatingPromoBanner from "@/components/rotating-promo-banner";
 import AnimatedCounter from "@/components/animated-counter";
+import AvailabilityRequest from "@/components/availability-request";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -392,8 +393,9 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Brand Marquee ────────────────────────────────────────────────── */}
-      <BrandMarquee />
+      <AvailabilityRequest />
+
+<BrandMarquee />
 
       {/* ── Trust Badges ─────────────────────────────────────────────────── */}
       <section className="bg-zinc-900 border-b border-zinc-800">
@@ -649,7 +651,7 @@ export default function HomePage() {
               { icon: Building2,   title: "Commercial Accounts",   desc: "Volume pricing and Net-30 terms for repair shops and dealerships.", href: "/fleet" },
               { icon: Truck,       title: "Fleet Support",         desc: "Dedicated account management for fleet operators and municipalities.", href: "/fleet" },
               { icon: Headphones,  title: "Customer Support",      desc: "Speak with a real parts specialist Mon–Sat, 7am–9pm CT.", href: "/contact" },
-              { icon: Phone,       title: "Call a Specialist",     desc: "Need help confirming fitment? Call 1-844-408-3004.", href: "tel:+18001-844-408-30045832" },
+              { icon: Phone,       title: "Call a Specialist",     desc: "Need help confirming fitment? Call 1-844-408-3004.", href: "tel:+18444083004" },
             ].map(({ icon: Icon, title, desc, href }) => (
               <Link
                 key={title}
@@ -709,7 +711,9 @@ export default function HomePage() {
               <ul className="mt-5 space-y-2 text-sm text-zinc-400">
                 <li className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-red-500 shrink-0" />
-                  1-844-408-3004
+                  <a href="tel:+18444083004" className="transition-colors hover:text-white">
+                    1-844-408-3004
+                  </a>
                 </li>
                 <li className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-red-500 shrink-0" />

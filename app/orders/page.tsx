@@ -145,7 +145,7 @@ export default function OrdersPage() {
             </div>
           </div>
           <div className="flex gap-3 shrink-0">
-            <a href="tel:+18001-844-408-30045832" className="text-xs font-semibold text-red-400 hover:text-red-300 transition-colors">1-844-408-3004</a>
+            <a href="tel:+18444083004" className="text-xs font-semibold text-red-400 hover:text-red-300 transition-colors">1-844-408-3004</a>
             <Link href="/contact" className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors">Email Support</Link>
             <Link href="/returns" className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors">Return Policy</Link>
           </div>

@@ -294,7 +294,16 @@ function ProductPage() {
                 <Phone className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-semibold text-white">Expert Fitment Support</p>
-                  <p className="text-xs text-zinc-400">Call 1-800-762-5832 · Mon–Sat 7am–9pm CT</p>
+                 <p className="text-xs text-zinc-400">
+  Call{" "}
+  <a
+    href="tel:+18444083004"
+    className="text-red-400 hover:text-red-300 underline"
+  >
+    1-844-408-3004
+  </a>
+  {" "}· Mon–Sat 7am–9pm CT
+</p>
                 </div>
               </div>
             </div>
@@ -503,7 +512,13 @@ const ProductTabs = memo(function ProductTabs({ product }: { product: Product })
                 <Link href="/fitment" className="text-red-400 hover:text-red-300 underline underline-offset-2">
                   Use our fitment verification tool
                 </Link>{" "}
-                or call <span className="text-zinc-300">1-800-762-5832</span>.
+               or call{" "}
+<a
+  href="tel:+18444083004"
+  className="text-zinc-300 hover:text-red-400 underline"
+>
+  1-844-408-3004
+</a>.
               </p>
             </div>
           );

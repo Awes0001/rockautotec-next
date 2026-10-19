@@ -143,7 +143,18 @@ export default function ReturnsPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-white mb-1.5">{title}</h3>
-                  <p className="text-sm text-zinc-400 leading-relaxed">{desc}</p>
+                  <p className="text-sm text-zinc-400 leading-relaxed">
+                    {desc.split("1-844-408-3004")[0]}
+                    {desc.includes("1-844-408-3004") && (
+                      <a
+                        href="tel:+18444083004"
+                        className="text-red-400 hover:text-red-300 transition-colors"
+                      >
+                        1-844-408-3004
+                      </a>
+                    )}
+                    {desc.split("1-844-408-3004").slice(1).join("1-844-408-3004")}
+                  </p>
                 </div>
               </div>
             ))}
@@ -261,7 +272,7 @@ export default function ReturnsPage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 shrink-0">
             <a
-              href="tel:+18001-844-408-30045832"
+              href="tel:+18444083004"
               className="inline-flex items-center gap-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold px-5 py-2.5 text-sm transition-colors"
             >
               <Phone className="h-4 w-4" /> 1-844-408-3004

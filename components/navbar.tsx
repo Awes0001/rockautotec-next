@@ -576,7 +576,7 @@ export default function Navbar() {
             )}
 
             <div className="border-t border-zinc-800 mt-2 pt-2">
-              <a href="tel:+18001-844-408-30045832" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-zinc-400">
+              <a href="tel:+18444083004" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-zinc-400">
                 <Phone className="h-4 w-4 text-red-500" />
                 <div>
                   <p className="text-white font-semibold">1-844-408-3004</p>

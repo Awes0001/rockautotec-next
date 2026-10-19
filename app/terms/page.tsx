@@ -50,7 +50,7 @@ const SECTIONS = [
     the part you purchase is correct for your specific vehicle before installation. RockAutoTec is not liable
     for damage caused by the installation of an incompatible part where you proceeded without confirming
     fitment through our support team. If you are unsure about compatibility, contact our fitment specialists
-    at 1-800-762-5832 before placing your order. Parts that do not fit your vehicle due to our fitment data
+    at 1-844-408-3004 before placing your order. Parts that do not fit your vehicle due to our fitment data
     errors are eligible for free return and exchange under our Return Policy.`,
   },
   {
@@ -111,8 +111,7 @@ const SECTIONS = [
     title: "9. Indemnification",
     body: `You agree to defend, indemnify, and hold harmless RockAutoTec LLC and its officers, directors,
     employees, agents, and licensors from and against any claims, liabilities, damages, judgments, awards,
-    losses, costs, expenses, or fees (including reasonable attorneys' fees) arising out of or relating to
-    your violation of these Terms or your use of the Services, including, but not limited to, any use of
+    losses, costs, expenses, or fees (including reasonable attorneys' fees) arising out of orrelating to your violation of these Terms or your use of the Services, including, but not limited to, any use of
     our content, services, and products other than as expressly authorized in these Terms.`,
   },
   {
@@ -157,12 +156,14 @@ const TABLE_OF_CONTENTS = SECTIONS.map(({ id, title }) => ({ id, title }));
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
-
       {/* Hero */}
       <section className="relative overflow-hidden bg-zinc-900 border-b border-zinc-800">
         <div
           className="absolute inset-0 opacity-20 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse at 60% 50%, #dc2626 0%, transparent 65%)" }}
+          style={{
+            background:
+              "radial-gradient(ellipse at 60% 50%, #dc2626 0%, transparent 65%)",
+          }}
         />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
           <div className="max-w-2xl">
@@ -186,7 +187,6 @@ export default function TermsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-
           {/* Sidebar TOC */}
           <aside className="lg:col-span-1">
             <div className="sticky top-24 rounded-xl border border-zinc-800 bg-zinc-900 p-5">
@@ -215,10 +215,11 @@ export default function TermsPage() {
 
           {/* Main content */}
           <main className="lg:col-span-3 space-y-10">
-
             {/* Summary */}
             <div className="rounded-xl border border-zinc-700 bg-zinc-800/60 p-6">
-              <h2 className="font-semibold text-white mb-3 text-sm uppercase tracking-wider">Summary (Plain English)</h2>
+              <h2 className="font-semibold text-white mb-3 text-sm uppercase tracking-wider">
+                Summary (Plain English)
+              </h2>
               <ul className="space-y-2 text-sm text-zinc-300">
                 {[
                   "You must be 18+ to purchase from us.",
@@ -241,7 +242,22 @@ export default function TermsPage() {
                 <h2 className="text-lg font-bold text-white mb-4 pb-2 border-b border-zinc-800">
                   {title}
                 </h2>
-                <p className="text-sm text-zinc-400 leading-relaxed">{body}</p>
+                <p className="text-sm text-zinc-400 leading-relaxed">
+                  {id === "fitment" ? (
+                    <>
+                      {body.split("1-844-408-3004")[0]}
+                      <a
+                        href="tel:+18444083004"
+                        className="text-red-400 hover:text-red-300 underline"
+                      >
+                        1-844-408-3004
+                      </a>
+                      {body.split("1-844-408-3004").slice(1).join("1-844-408-3004")}
+                    </>
+                  ) : (
+                    body
+                  )}
+                </p>
               </section>
             ))}
 
@@ -263,8 +279,10 @@ export default function TermsPage() {
                   <div className="flex items-start gap-2 text-zinc-300">
                     <ArrowRight className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
                     <span>
-                      RockAutoTec LLC, Attn: Legal Department<br />
-                      123 Auto Drive, Suite 400<br />
+                      RockAutoTec LLC, Attn: Legal Department
+                      <br />
+                      123 Auto Drive, Suite 400
+                      <br />
                       Dallas, TX 75201
                     </span>
                   </div>
@@ -285,11 +303,9 @@ export default function TermsPage() {
                 </div>
               </div>
             </section>
-
           </main>
         </div>
       </div>
-
     </div>
   );
 }

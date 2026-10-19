@@ -173,11 +173,11 @@ export default function FitmentPage() {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <a
-              href="tel:18001-844-408-30042886"
+              href="tel:+18444083004"
               className="flex items-center justify-center gap-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-3 text-sm transition-colors"
             >
               <Phone className="h-4 w-4" />
-              1-800-ROC-AUTO
+              1-844-408-3004
             </a>
             <Link
               href="/contact"

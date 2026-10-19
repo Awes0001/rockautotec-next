@@ -119,7 +119,7 @@ function buildEmailHtml(p: OrderPayload, orderId: string): string {
   <!-- Footer -->
   <tr><td style="padding:24px 0;text-align:center;">
     <p style="margin:0;color:#52525b;font-size:12px;">
-      Questions? Call <a href="tel:+18001-844-408-30045832" style="color:#ef4444;text-decoration:none;">1-844-408-3004</a>
+      Questions? Call <a href="tel:+18444083004" style="color:#ef4444;text-decoration:none;">1-844-408-3004</a>
       or <a href="mailto:support@rockautotec.com" style="color:#ef4444;text-decoration:none;">support@rockautotec.com</a>
     </p>
     <p style="margin:10px 0 0;color:#3f3f46;font-size:11px;">© 2026 RockAutoTec LLC · All rights reserved</p>

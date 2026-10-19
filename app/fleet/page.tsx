@@ -92,7 +92,7 @@ export default function FleetPage() {
               Apply for a Commercial Account
             </Link>
             <a
-              href="tel:18001-844-408-30042886"
+              href="tel:+18444083004"
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-600 hover:border-zinc-500 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold px-7 py-3.5 text-base transition-colors"
             >
               <Phone className="h-4 w-4" />
@@ -209,7 +209,7 @@ export default function FleetPage() {
             </Link>
             <div className="flex items-center gap-3 text-sm text-zinc-400">
               <Phone className="h-4 w-4 text-red-500 shrink-0" />
-              <span>Prefer to talk? Call <a href="tel:18001-844-408-30042886" className="text-white font-semibold hover:text-red-400">1-800-ROC-AUTO</a> — Fleet Sales available Mon–Fri 7am–6pm CT</span>
+              <span>Prefer to talk? Call <a href="tel:+18444083004" className="text-white font-semibold hover:text-red-400">1-844-408-3004</a> — Fleet Sales available Mon–Fri 7am–6pm CT</span>
             </div>
           </div>
         </section>
