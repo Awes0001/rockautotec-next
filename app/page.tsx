@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  Phone, Star, Truck, Shield, Lock, Hash,
+  Phone, Truck, Shield, Lock, Hash,
   RotateCcw, Headphones, Check, ArrowRight,
   Car, Package, Tag, ScanLine, Loader2, AlertTriangle,
   TrendingUp, Building2, Mail, Facebook, Twitter, Instagram, Youtube,
@@ -27,38 +27,6 @@ import AnimatedCounter from "@/components/animated-counter";
 import AvailabilityRequest from "@/components/availability-request";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function Stars({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) {
-  const cls = size === "md" ? "h-5 w-5" : "h-3.5 w-3.5";
-  return (
-    <div className="flex">
-      {[1, 2, 3, 4, 5].map((n) => (
-        <Star
-          key={n}
-          className={`${cls} ${n <= Math.round(rating) ? "fill-yellow-400 text-yellow-400" : "text-zinc-600"}`}
-        />
-      ))}
-    </div>
-  );
-}
-
-function StockTag({ part }: { part: Product }) {
-  if (!part.inStock) {
-    return <span className="text-xs font-semibold text-rose-500">Out of Stock</span>;
-  }
-  if (isLowStock(part)) {
-    return (
-      <span className="text-xs font-semibold text-amber-400 flex items-center gap-1">
-        <AlertTriangle className="h-3 w-3" /> Only {lowStockCount(part)} left
-      </span>
-    );
-  }
-  return (
-    <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
-      <Check className="h-3 w-3" /> In Stock
-    </span>
-  );
-}
 
 function ProductCard({ part }: { part: Product }) {
   const vehicleCount = part.fitment.length;
