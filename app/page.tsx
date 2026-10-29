@@ -76,12 +76,12 @@ function ProductCard({ part }: { part: Product }) {
               <Phone className="h-3.5 w-3.5" />
               Call for Price
             </a>
-            <Link
+            <a
               href={`/?part=${encodeURIComponent(`${part.brand} ${part.name} (SKU: ${part.sku})`)}#check-availability`}
               className="inline-flex items-center justify-center gap-1.5 border border-zinc-700 hover:border-red-500 text-zinc-300 hover:text-red-400 py-2.5 rounded-lg transition-colors text-xs font-semibold"
             >
               Request a Quote <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+            </a>
           </div>
         </div>
       </div>
