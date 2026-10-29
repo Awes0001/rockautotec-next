@@ -3,16 +3,15 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
-  Phone, ShoppingCart, Star, Truck, Shield, Lock, Hash,
+  Phone, Truck, Shield, Lock, Hash,
   RotateCcw, Headphones, Check, ArrowRight,
   Car, Package, Tag, ScanLine, Loader2, AlertTriangle,
   TrendingUp, Building2, Mail, Facebook, Twitter, Instagram, Youtube,
   Clock, CreditCard,
 } from "lucide-react";
-import { useCart } from "@/components/cart-context";
 import {
   ALL_PRODUCTS, CATEGORIES, CATEGORY_SLUGS, CATEGORY_ICON_NAMES,
-  BRANDS, brandSlug, isLowStock, lowStockCount, shippingEstimate,
+  BRANDS, brandSlug,
   getFeaturedProducts, getProductsByCategory,
   type Product,
 } from "@/lib/catalog";
@@ -29,42 +28,7 @@ import AvailabilityRequest from "@/components/availability-request";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function Stars({ rating, size = "sm" }: { rating: number; size?: "sm" | "md" }) {
-  const cls = size === "md" ? "h-5 w-5" : "h-3.5 w-3.5";
-  return (
-    <div className="flex">
-      {[1, 2, 3, 4, 5].map((n) => (
-        <Star
-          key={n}
-          className={`${cls} ${n <= Math.round(rating) ? "fill-yellow-400 text-yellow-400" : "text-zinc-600"}`}
-        />
-      ))}
-    </div>
-  );
-}
-
-function StockTag({ part }: { part: Product }) {
-  if (!part.inStock) {
-    return <span className="text-xs font-semibold text-rose-500">Out of Stock</span>;
-  }
-  if (isLowStock(part)) {
-    return (
-      <span className="text-xs font-semibold text-amber-400 flex items-center gap-1">
-        <AlertTriangle className="h-3 w-3" /> Only {lowStockCount(part)} left
-      </span>
-    );
-  }
-  return (
-    <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
-      <Check className="h-3 w-3" /> In Stock
-    </span>
-  );
-}
-
 function ProductCard({ part }: { part: Product }) {
-  const { addToCart } = useCart();
-  const [added, setAdded] = useState(false);
-  const discount = Math.round((1 - part.price / part.was) * 100);
   const vehicleCount = part.fitment.length;
 
   return (
@@ -76,11 +40,6 @@ function ProductCard({ part }: { part: Product }) {
           className="h-20 w-full"
           iconClassName="h-7 w-7 group-hover:scale-110 transition-transform duration-200"
         />
-        {discount > 0 && (
-          <span className="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow">
-            SAVE {discount}%
-          </span>
-        )}
       </Link>
 
       <div className="flex flex-col flex-1 p-4">
@@ -97,22 +56,11 @@ function ProductCard({ part }: { part: Product }) {
           <p>SKU: {part.sku}</p>
           <p>OEM: {part.oemNumber}</p>
         </div>
-        <div className="flex items-center gap-2 mb-2">
-          <Stars rating={part.rating} />
-          <span className="text-xs text-zinc-400">
-            {part.rating.toFixed(1)} ({part.reviews.toLocaleString()})
-          </span>
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs text-zinc-400">Vehicle fitment information available</span>
         </div>
 
         <div className="mt-auto">
-          <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-lg font-bold text-white">${part.price.toFixed(2)}</span>
-            {discount > 0 && (
-              <span className="text-sm text-zinc-500 line-through">${part.was.toFixed(2)}</span>
-            )}
-          </div>
-          <div className="mb-1"><StockTag part={part} /></div>
-          <p className="text-[11px] text-zinc-500 mb-2">{shippingEstimate(part)}</p>
           <div className="mb-3">
             <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-600/10 px-2 py-0.5 text-[10px] font-semibold text-red-400">
               <Car className="h-3 w-3" />
@@ -120,30 +68,19 @@ function ProductCard({ part }: { part: Product }) {
             </span>
           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                addToCart({ part: part.name, year: "", make: "", model: "", price: part.price });
-                setAdded(true);
-                setTimeout(() => setAdded(false), 1500);
-              }}
-              disabled={!part.inStock}
-              className={`flex-1 text-xs font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
-                added
-                  ? "bg-emerald-600 text-white"
-                  : part.inStock
-                  ? "bg-cta-600 hover:bg-cta-500 active:bg-cta-700 text-white"
-                  : "bg-zinc-700 text-zinc-500 cursor-not-allowed"
-              }`}
+          <div className="grid grid-cols-1 gap-2">
+            <a
+              href="tel:+18444083004"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-cta-600 hover:bg-cta-500 active:bg-cta-700 text-white text-xs font-semibold py-2.5 transition-colors"
             >
-              {added ? <Check className="h-3.5 w-3.5" /> : <ShoppingCart className="h-3.5 w-3.5" />}
-              {added ? "Added!" : "Add to Cart"}
-            </button>
+              <Phone className="h-3.5 w-3.5" />
+              Call for Price
+            </a>
             <Link
               href={`/part/${part.id}`}
-              className="border border-zinc-700 hover:border-red-500 text-zinc-400 hover:text-red-400 px-3 rounded-lg transition-colors flex items-center justify-center text-xs font-semibold whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-1.5 border border-zinc-700 hover:border-red-500 text-zinc-300 hover:text-red-400 py-2.5 rounded-lg transition-colors text-xs font-semibold"
             >
-              Check Fitment
+              Request a Quote <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         </div>
