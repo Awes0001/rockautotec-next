@@ -30,6 +30,9 @@ import AvailabilityRequest from "@/components/availability-request";
 
 function ProductCard({ part }: { part: Product }) {
   const vehicleCount = part.fitment.length;
+  const quotePartName = part.name.toLowerCase().startsWith(part.brand.toLowerCase())
+    ? part.name
+    : `${part.brand} ${part.name}`;
 
   return (
     <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden hover:border-red-600/60 hover:shadow-xl hover:shadow-red-950/30 transition-all duration-200 group">
@@ -76,12 +79,12 @@ function ProductCard({ part }: { part: Product }) {
               <Phone className="h-3.5 w-3.5" />
               Call for Price
             </a>
-            <Link
-              href={`/part/${part.id}`}
+            <a
+              href={`/?part=${encodeURIComponent(`${quotePartName} (SKU: ${part.sku})`)}#check-availability`}
               className="inline-flex items-center justify-center gap-1.5 border border-zinc-700 hover:border-red-500 text-zinc-300 hover:text-red-400 py-2.5 rounded-lg transition-colors text-xs font-semibold"
             >
               Request a Quote <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+            </a>
           </div>
         </div>
       </div>
