@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Phone, CheckCircle, Loader2 } from "lucide-react";
 
 const PHONE_NUMBER = "1-844-408-3004";
@@ -11,6 +11,13 @@ export default function AvailabilityRequest() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
+  const [partDetails, setPartDetails] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedPart = params.get("part");
+    if (requestedPart) setPartDetails(requestedPart.slice(0, 1000));
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,6 +50,7 @@ export default function AvailabilityRequest() {
       }
 
       setSuccess(true);
+      setPartDetails("");
       setMessage(
         "Your request has been submitted! Our team will contact you shortly."
       );
@@ -72,12 +80,11 @@ export default function AvailabilityRequest() {
             </p>
 
             <h2 className="text-3xl font-extrabold leading-tight sm:text-4xl">
-              Check Part Availability
+              Request a Quote or Check Availability
             </h2>
 
             <p className="mt-4 max-w-xl text-slate-300">
-              Tell us which part you need and your vehicle details.
-              Our team will review your request and get back to you.
+              Send us the part and vehicle details. Our team will verify fitment, check availability, and contact you with next steps.
             </p>
 
             <a
@@ -98,7 +105,7 @@ export default function AvailabilityRequest() {
             className="rounded-2xl bg-white p-5 text-slate-900 shadow-xl sm:p-7"
           >
             <h3 className="mb-5 text-xl font-bold">
-              Request a Part
+              Request a Quote
             </h3>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -206,6 +213,8 @@ export default function AvailabilityRequest() {
                 Which Part Do You Need? *
                 <textarea
                   name="part"
+                  value={partDetails}
+                  onChange={(event) => setPartDetails(event.target.value)}
                   required
                   minLength={3}
                   maxLength={1000}
